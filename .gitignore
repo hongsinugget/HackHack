@@ -16,10 +16,12 @@ credentials/
 *.pfx
 config/secrets.*
 
-# 기획서 (민감 문서)
+# 기획서 및 내부 문서 (민감 문서)
 기획서/
 기획서.md
 서비스개요.md
+CLAUDE.md
+plan-progress.md
 
 # OS 파일
 .DS_Store
