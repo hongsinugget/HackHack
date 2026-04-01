@@ -29,12 +29,14 @@ function TeamCard({
   hackathonTags,
   onApply,
   applied,
+  isMember,
 }: {
   team: Team;
   hackathonTitle?: string;
   hackathonTags?: string[];
   onApply: (teamCode: string) => void;
   applied: boolean;
+  isMember: boolean;
 }) {
   return (
     <div className="card" style={{ padding: "1.25rem", display: "flex", flexDirection: "column", gap: 0 }}>
@@ -96,7 +98,18 @@ function TeamCard({
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <span style={{ fontSize: "0.75rem", color: "var(--muted)" }}>팀원 {team.memberCount}명</span>
-        {team.isOpen && (
+        {isMember ? (
+          <span style={{
+            fontSize: "0.75rem",
+            padding: "4px 12px",
+            borderRadius: 6,
+            border: "1px solid rgba(16,185,129,0.3)",
+            background: "rgba(16,185,129,0.08)",
+            color: "#10b981",
+          }}>
+            ✓ 소속된 팀
+          </span>
+        ) : team.isOpen && (
           <button
             onClick={() => onApply(team.teamCode)}
             disabled={applied}
@@ -124,15 +137,103 @@ function CreateTeamModal({
   onCreate,
 }: {
   onClose: () => void;
-  onCreate: (data: { name: string; intro: string; lookingFor: string[] }) => void;
+  onCreate: (data: { name: string; intro: string; lookingFor: string[]; maxMembers: number }) => string;
 }) {
+  const [step, setStep] = useState<1 | 2>(1);
   const [name, setName] = useState("");
   const [intro, setIntro] = useState("");
   const [lookingFor, setLookingFor] = useState<string[]>([]);
+  const [maxMembers, setMaxMembers] = useState(4);
+  const [inviteCode, setInviteCode] = useState("");
+  const [copied, setCopied] = useState(false);
   const allRoles = ["Frontend", "Backend", "Designer", "PM", "ML Engineer"];
 
   const toggleRole = (role: string) =>
     setLookingFor((prev) => prev.includes(role) ? prev.filter((r) => r !== role) : [...prev, role]);
+
+  const inviteUrl = `${typeof window !== "undefined" ? window.location.origin : "https://hackhack.vercel.app"}/invite/${inviteCode}`;
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(inviteUrl).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  if (step === 2) {
+    return (
+      <div
+        style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: "1rem" }}
+      >
+        <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, padding: "2rem", width: "100%", maxWidth: 480 }}>
+          <div style={{ textAlign: "center", marginBottom: "1.75rem" }}>
+            <div style={{ fontSize: "2.5rem", marginBottom: "0.75rem" }}>🎉</div>
+            <h2 style={{ fontWeight: 800, fontSize: "1.25rem", marginBottom: "0.375rem" }}>팀 생성 완료!</h2>
+            <p style={{ fontSize: "0.85rem", color: "var(--muted)" }}>
+              <b style={{ color: "var(--text)" }}>{name}</b> 팀이 만들어졌습니다
+            </p>
+          </div>
+
+          <div style={{ marginBottom: "1.25rem" }}>
+            <label style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--text)", display: "block", marginBottom: "0.5rem" }}>
+              초대 링크
+            </label>
+            <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+              <div style={{
+                flex: 1,
+                padding: "0.625rem 0.875rem",
+                borderRadius: 8,
+                background: "var(--surface2)",
+                border: "1px solid var(--border)",
+                fontSize: "0.8rem",
+                color: "var(--muted)",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}>
+                {inviteUrl}
+              </div>
+              <button
+                onClick={handleCopy}
+                style={{
+                  padding: "0.625rem 1rem",
+                  borderRadius: 8,
+                  background: copied ? "rgba(16,185,129,0.15)" : "rgba(124,58,237,0.15)",
+                  color: copied ? "#10b981" : "#a78bfa",
+                  border: copied ? "1px solid rgba(16,185,129,0.3)" : "1px solid rgba(124,58,237,0.3)",
+                  cursor: "pointer",
+                  fontSize: "0.8rem",
+                  fontWeight: 700,
+                  whiteSpace: "nowrap",
+                  transition: "all 0.2s",
+                }}
+              >
+                {copied ? "✓ 복사됨" : "📋 복사"}
+              </button>
+            </div>
+          </div>
+
+          <div style={{
+            padding: "0.875rem 1rem",
+            background: "rgba(124,58,237,0.06)",
+            border: "1px solid rgba(124,58,237,0.15)",
+            borderRadius: 10,
+            marginBottom: "1.5rem",
+          }}>
+            <div style={{ fontSize: "0.75rem", color: "var(--muted)", marginBottom: "0.25rem" }}>초대 코드</div>
+            <div style={{ fontSize: "1rem", fontWeight: 800, color: "#a78bfa", letterSpacing: "0.05em" }}>{inviteCode}</div>
+          </div>
+
+          <button
+            onClick={onClose}
+            style={{ width: "100%", padding: "0.625rem", borderRadius: 8, background: "var(--accent)", color: "#fff", border: "none", fontWeight: 700, cursor: "pointer", fontSize: "0.95rem" }}
+          >
+            확인
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -162,6 +263,34 @@ function CreateTeamModal({
               rows={3}
               style={{ width: "100%", padding: "0.625rem 0.875rem", borderRadius: 8, background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "0.9rem", resize: "vertical" }}
             />
+          </div>
+
+          <div>
+            <label style={{ fontSize: "0.8rem", color: "var(--muted)", display: "block", marginBottom: 8 }}>최대 팀원 수</label>
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              {[1, 2, 3, 4, 5].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setMaxMembers(n)}
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 8,
+                    fontSize: "0.9rem",
+                    fontWeight: maxMembers === n ? 700 : 400,
+                    background: maxMembers === n ? "rgba(124,58,237,0.2)" : "transparent",
+                    color: maxMembers === n ? "#a78bfa" : "var(--muted)",
+                    border: maxMembers === n ? "1px solid rgba(124,58,237,0.5)" : "1px solid var(--border)",
+                    cursor: "pointer",
+                    transition: "all 0.15s",
+                  }}
+                >
+                  {n}
+                </button>
+              ))}
+              <span style={{ fontSize: "0.8rem", color: "var(--muted)", alignSelf: "center", marginLeft: "0.25rem" }}>명</span>
+            </div>
           </div>
 
           <div>
@@ -200,7 +329,9 @@ function CreateTeamModal({
           <button
             onClick={() => {
               if (!name.trim()) { toast.error("팀 이름을 입력해주세요"); return; }
-              onCreate({ name: name.trim(), intro: intro.trim(), lookingFor });
+              const code = onCreate({ name: name.trim(), intro: intro.trim(), lookingFor, maxMembers });
+              setInviteCode(code);
+              setStep(2);
             }}
             style={{ flex: 2, padding: "0.625rem", borderRadius: 8, background: "var(--accent)", color: "#fff", border: "none", fontWeight: 700, cursor: "pointer" }}
           >
@@ -355,15 +486,19 @@ function CampContent() {
   const hackathons = useStore((s) => s.hackathons);
   const teams = useStore((s) => s.teams);
   const initialized = useStore((s) => s.initialized);
+  const profile = useStore((s) => s.profile);
+  const joinTeam = useStore((s) => s.joinTeam);
+  const addTeam = useStore((s) => s.addTeam);
   const searchParams = useSearchParams();
 
   const [selectedHackathon, setSelectedHackathon] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedSubRole, setSelectedSubRole] = useState<string | null>(null);
-  const [appliedTeams, setAppliedTeams] = useState<Set<string>>(new Set());
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showRandomModal, setShowRandomModal] = useState(false);
   const [localTeams, setLocalTeams] = useState<Team[]>([]);
+
+  const myTeamCodes = new Set(profile?.myTeamCodes ?? []);
 
   // URL 파라미터에서 대회 자동 선택
   useEffect(() => {
@@ -397,39 +532,43 @@ function CampContent() {
         if (categoryObj) return t.lookingFor.some((r) => categoryObj.roles.includes(r));
         return true;
       })
-      .filter((t) => !appliedTeams.has(t.teamCode));
+      .filter((t) => !myTeamCodes.has(t.teamCode));
 
     if (candidates.length === 0) {
       toast.error("조건에 맞는 팀이 없습니다");
       return false;
     }
     const picked = candidates[Math.floor(Math.random() * candidates.length)];
-    setAppliedTeams((prev) => new Set([...prev, picked.teamCode]));
+    joinTeam(picked.teamCode);
     toast.success(`🎉 ${picked.name} 팀에 자동 배정됐습니다!`);
     return true;
   };
 
   const handleApply = (teamCode: string) => {
-    setAppliedTeams((prev) => new Set([...prev, teamCode]));
+    joinTeam(teamCode);
     toast.success("지원 완료! 팀장의 수락을 기다려주세요 🤝");
   };
 
-  const handleCreateTeam = (data: { name: string; intro: string; lookingFor: string[] }) => {
+  const handleCreateTeam = (data: { name: string; intro: string; lookingFor: string[]; maxMembers: number }): string => {
     const inviteCode = "INV-" + Math.random().toString(36).slice(2, 7).toUpperCase();
+    const inviteUrl = `${window.location.origin}/invite/${inviteCode}`;
+    const teamCode = "T-" + Math.random().toString(36).slice(2, 6).toUpperCase();
     const newTeam: Team = {
-      teamCode: "T-" + Math.random().toString(36).slice(2, 6).toUpperCase(),
+      teamCode,
       hackathonSlug: selectedHackathon ?? "",
       name: data.name,
       isOpen: data.lookingFor.length > 0,
       memberCount: 1,
       lookingFor: data.lookingFor,
       intro: data.intro || "새로 만들어진 팀입니다.",
-      contact: { type: "link", url: "#" },
+      contact: { type: "link", url: inviteUrl },
       createdAt: new Date().toISOString(),
     };
+    addTeam(newTeam);
     setLocalTeams((prev) => [newTeam, ...prev]);
-    setShowCreateModal(false);
-    toast.success(`🚀 "${data.name}" 팀 생성 완료! 초대코드: ${inviteCode}`);
+    joinTeam(teamCode);
+    toast.success(`🚀 "${data.name}" 팀이 생성됐습니다!`);
+    return inviteCode;
   };
 
   return (
@@ -635,7 +774,8 @@ function CampContent() {
               hackathonTitle={h?.title}
               hackathonTags={h?.tags}
               onApply={handleApply}
-              applied={appliedTeams.has(team.teamCode)}
+              applied={myTeamCodes.has(team.teamCode)}
+              isMember={myTeamCodes.has(team.teamCode)}
             />
             );
           })}

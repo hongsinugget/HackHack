@@ -54,6 +54,7 @@ export default function HackathonDetailPage({ params }: { params: Promise<{ slug
 
   const hackathon = hackathons.find((h) => h.slug === slug) ?? null;
   const hackathonTeams = teams.filter((t) => t.hackathonSlug === slug && t.isOpen);
+  const myTeamCodes = new Set(profile?.myTeamCodes ?? []);
   const leaderboard = leaderboards.find((lb) => lb.hackathonSlug === slug) ?? null;
   const detail = getHackathonDetail(slug);
 
@@ -620,16 +621,29 @@ export default function HackathonDetailPage({ params }: { params: Promise<{ slug
 
             {hackathonTeams.length > 0 ? (
               <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-                {hackathonTeams.map((team) => (
+                {hackathonTeams.map((team) => {
+                  const isMember = myTeamCodes.has(team.teamCode);
+                  return (
                   <div
                     key={team.teamCode}
                     className="card"
-                    style={{ padding: "1.25rem", display: "flex", gap: "1rem", alignItems: "flex-start" }}
+                    style={{
+                      padding: "1.25rem",
+                      display: "flex",
+                      gap: "1rem",
+                      alignItems: "flex-start",
+                      border: isMember ? "1px solid rgba(16,185,129,0.3)" : undefined,
+                      background: isMember ? "rgba(16,185,129,0.04)" : undefined,
+                    }}
                   >
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.4rem" }}>
                         <span style={{ fontWeight: 700, color: "var(--text)" }}>{team.name}</span>
-                        {team.isOpen && (
+                        {isMember ? (
+                          <span style={{ fontSize: "0.7rem", background: "rgba(16,185,129,0.15)", color: "#10b981", padding: "0.15rem 0.4rem", borderRadius: 4, fontWeight: 600 }}>
+                            ✓ 소속된 팀
+                          </span>
+                        ) : team.isOpen && (
                           <span style={{ fontSize: "0.7rem", background: "rgba(16,185,129,0.15)", color: "#10b981", padding: "0.15rem 0.4rem", borderRadius: 4, fontWeight: 600 }}>
                             모집중
                           </span>
@@ -657,7 +671,25 @@ export default function HackathonDetailPage({ params }: { params: Promise<{ slug
                         ))}
                       </div>
                     </div>
-                    {team.isOpen && (
+                    {isMember ? (
+                      <Link
+                        href="/myteam"
+                        style={{
+                          flexShrink: 0,
+                          padding: "0.45rem 0.875rem",
+                          background: "rgba(16,185,129,0.1)",
+                          color: "#10b981",
+                          borderRadius: 8,
+                          fontSize: "0.85rem",
+                          fontWeight: 600,
+                          textDecoration: "none",
+                          whiteSpace: "nowrap",
+                          border: "1px solid rgba(16,185,129,0.25)",
+                        }}
+                      >
+                        내 팀 보기 →
+                      </Link>
+                    ) : team.isOpen && (
                       <a
                         href={team.contact.url}
                         target="_blank"
@@ -678,7 +710,8 @@ export default function HackathonDetailPage({ params }: { params: Promise<{ slug
                       </a>
                     )}
                   </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div className="card" style={{ padding: "2.5rem", textAlign: "center" }}>

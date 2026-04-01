@@ -77,6 +77,7 @@ export interface Profile {
   badges: Badge[];
   bookmarks: string[];
   timeline: TimelineEvent[];
+  myTeamCodes: string[];
 }
 
 export interface HackathonDetailSection {

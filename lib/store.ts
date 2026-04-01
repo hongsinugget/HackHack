@@ -36,6 +36,10 @@ interface StoreState {
   toggleBookmark: (slug: string) => void;
   updateLeaderboard: (slug: string, entry: Omit<LeaderboardEntry, "rank">) => void;
   addTimelineEvent: (event: TimelineEvent) => void;
+  joinTeam: (teamCode: string) => void;
+  leaveTeam: (teamCode: string) => void;
+  addTeam: (team: Team) => void;
+  updateTeam: (teamCode: string, updates: Partial<Team>) => void;
 }
 
 export const useStore = create<StoreState>((set, get) => ({
@@ -79,6 +83,7 @@ export const useStore = create<StoreState>((set, get) => ({
       nickname,
       badges: [firstSpark],
       bookmarks: [],
+      myTeamCodes: [],
       timeline: [
         {
           type: "join",
@@ -154,5 +159,37 @@ export const useStore = create<StoreState>((set, get) => ({
     const updated = { ...profile, timeline: [...profile.timeline, event] };
     saveProfile(updated);
     set({ profile: updated });
+  },
+
+  joinTeam: (teamCode: string) => {
+    const { profile } = get();
+    if (!profile) return;
+    const myTeamCodes = profile.myTeamCodes ?? [];
+    if (myTeamCodes.includes(teamCode)) return;
+    const updated = { ...profile, myTeamCodes: [...myTeamCodes, teamCode] };
+    saveProfile(updated);
+    set({ profile: updated });
+  },
+
+  leaveTeam: (teamCode: string) => {
+    const { profile } = get();
+    if (!profile) return;
+    const updated = { ...profile, myTeamCodes: (profile.myTeamCodes ?? []).filter((c) => c !== teamCode) };
+    saveProfile(updated);
+    set({ profile: updated });
+  },
+
+  addTeam: (team: Team) => {
+    const { teams } = get();
+    const updated = [team, ...teams];
+    localStorage.setItem(LS_KEYS.teams, JSON.stringify(updated));
+    set({ teams: updated });
+  },
+
+  updateTeam: (teamCode: string, updates: Partial<Team>) => {
+    const { teams } = get();
+    const updated = teams.map((t) => t.teamCode === teamCode ? { ...t, ...updates } : t);
+    localStorage.setItem(LS_KEYS.teams, JSON.stringify(updated));
+    set({ teams: updated });
   },
 }));

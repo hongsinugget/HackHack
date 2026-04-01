@@ -20,6 +20,8 @@ export default function Navbar() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
+  const hasTeam = mounted && (profile?.myTeamCodes ?? []).length > 0;
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     const q = searchQuery.trim();
@@ -98,6 +100,29 @@ export default function Navbar() {
             onBlur={(e) => { e.target.style.borderColor = "var(--border)"; e.target.style.width = "180px"; }}
           />
         </form>
+
+        <Link
+          href="/myteam"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "0.4rem",
+            fontSize: "0.875rem",
+            fontWeight: pathname === "/myteam" || hasTeam ? 600 : 400,
+            color: pathname === "/myteam" ? "#a78bfa" : "var(--muted)",
+            background: pathname === "/myteam" ? "rgba(124,58,237,0.12)" : "transparent",
+            textDecoration: "none",
+            padding: "0.375rem 0.75rem",
+            borderRadius: 8,
+            border: hasTeam ? "1px solid rgba(124,58,237,0.25)" : "1px solid var(--border)",
+            transition: "all 0.15s",
+          }}
+        >
+          {hasTeam && (
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#10b981", flexShrink: 0, display: "inline-block" }} />
+          )}
+          내 팀
+        </Link>
 
         <Link
           href="/profile"
