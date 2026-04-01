@@ -29,10 +29,18 @@ export default function InvitePage({ params }: { params: Promise<{ code: string 
   // 초대 코드로 팀 찾기
   const team = teams.find((t) => t.contact.url.includes(`/invite/${code}`));
   const hackathon = hackathons.find((h) => h.slug === team?.hackathonSlug);
-  const alreadyJoined = team ? (profile?.myTeamCodes ?? []).includes(team.teamCode) : false;
+  const myTeamCodes = profile?.myTeamCodes ?? [];
+  const alreadyJoined = team ? myTeamCodes.includes(team.teamCode) : false;
+  const alreadyInHackathon = !!team?.hackathonSlug && teams
+    .filter((t) => myTeamCodes.includes(t.teamCode))
+    .some((t) => t.hackathonSlug === team.hackathonSlug);
 
   const handleAccept = () => {
     if (!team) return;
+    if (alreadyInHackathon && !alreadyJoined) {
+      toast.error("이미 같은 대회의 팀에 소속되어 있습니다");
+      return;
+    }
     joinTeam(team.teamCode);
     setDecided("accepted");
     toast.success(`🎉 ${team.name} 팀에 합류했습니다!`);
@@ -169,6 +177,17 @@ export default function InvitePage({ params }: { params: Promise<{ code: string 
             <button
               onClick={() => router.push("/myteam")}
               style={{ marginTop: "0.75rem", padding: "0.5rem 1.25rem", borderRadius: 8, background: "var(--accent)", color: "#fff", border: "none", fontWeight: 700, cursor: "pointer", fontSize: "0.875rem" }}
+            >
+              내 팀 보러가기 →
+            </button>
+          </div>
+        ) : alreadyInHackathon ? (
+          <div style={{ textAlign: "center", padding: "1.25rem", background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 12, marginBottom: "1rem" }}>
+            <div style={{ fontSize: "0.9rem", fontWeight: 700, color: "#ef4444", marginBottom: "0.25rem" }}>이미 같은 대회의 팀에 소속되어 있습니다</div>
+            <p style={{ fontSize: "0.8rem", color: "var(--muted)", marginBottom: "0.75rem" }}>한 대회에는 1개 팀만 참여할 수 있습니다</p>
+            <button
+              onClick={() => router.push("/myteam")}
+              style={{ padding: "0.5rem 1.25rem", borderRadius: 8, background: "var(--accent)", color: "#fff", border: "none", fontWeight: 700, cursor: "pointer", fontSize: "0.875rem" }}
             >
               내 팀 보러가기 →
             </button>

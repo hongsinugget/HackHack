@@ -25,6 +25,8 @@ export interface Team {
   name: string;
   isOpen: boolean;
   memberCount: number;
+  members: string[];
+  leader: string;
   lookingFor: string[];
   intro: string;
   contact: {

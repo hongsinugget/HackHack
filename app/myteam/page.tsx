@@ -109,12 +109,19 @@ export default function MyTeamPage() {
                 {/* 상단: 해커톤 + 상태 */}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1rem" }}>
                   <div>
-                    {hackathon && (
+                    {hackathon ? (
                       <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "#a78bfa", marginBottom: "0.25rem" }}>
                         🏆 {hackathon.title}
                       </div>
+                    ) : team.hackathonSlug ? (
+                      <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--muted)", marginBottom: "0.25rem" }}>
+                        🏆 {team.hackathonSlug}
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: "0.75rem", color: "var(--muted)", marginBottom: "0.25rem" }}>
+                        대회 미지정
+                      </div>
                     )}
-                    <div style={{ fontSize: "0.65rem", color: "var(--muted)" }}>{team.teamCode}</div>
                     <div style={{ fontWeight: 800, fontSize: "1.2rem", marginTop: "0.1rem" }}>{team.name}</div>
                   </div>
                   {team.isOpen ? (

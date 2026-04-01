@@ -58,7 +58,6 @@ function TeamCard({
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.625rem" }}>
         <div>
-          <div style={{ fontSize: "0.65rem", color: "var(--muted)", marginBottom: 2 }}>{team.teamCode}</div>
           <div style={{ fontWeight: 700, fontSize: "1rem" }}>{team.name}</div>
         </div>
         {team.isOpen ? (
@@ -135,11 +134,14 @@ function TeamCard({
 function CreateTeamModal({
   onClose,
   onCreate,
+  hackathons,
 }: {
   onClose: () => void;
-  onCreate: (data: { name: string; intro: string; lookingFor: string[]; maxMembers: number }) => string;
+  onCreate: (data: { name: string; intro: string; lookingFor: string[]; maxMembers: number; hackathonSlug: string }) => string;
+  hackathons: { slug: string; title: string; status: string }[];
 }) {
   const [step, setStep] = useState<1 | 2>(1);
+  const [hackathonSlug, setHackathonSlug] = useState("");
   const [name, setName] = useState("");
   const [intro, setIntro] = useState("");
   const [lookingFor, setLookingFor] = useState<string[]>([]);
@@ -245,6 +247,20 @@ function CreateTeamModal({
 
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
           <div>
+            <label style={{ fontSize: "0.8rem", color: "var(--muted)", display: "block", marginBottom: 6 }}>참가 대회 *</label>
+            <select
+              value={hackathonSlug}
+              onChange={(e) => setHackathonSlug(e.target.value)}
+              style={{ width: "100%", padding: "0.625rem 0.875rem", borderRadius: 8, background: "var(--surface2)", border: "1px solid var(--border)", color: hackathonSlug ? "var(--text)" : "var(--muted)", fontSize: "0.9rem", outline: "none", cursor: "pointer" }}
+            >
+              <option value="" disabled>대회를 선택하세요</option>
+              {hackathons.map((h) => (
+                <option key={h.slug} value={h.slug}>{h.title}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
             <label style={{ fontSize: "0.8rem", color: "var(--muted)", display: "block", marginBottom: 6 }}>팀 이름 *</label>
             <input
               value={name}
@@ -328,8 +344,9 @@ function CreateTeamModal({
           </button>
           <button
             onClick={() => {
+              if (!hackathonSlug) { toast.error("참가할 대회를 선택해주세요"); return; }
               if (!name.trim()) { toast.error("팀 이름을 입력해주세요"); return; }
-              const code = onCreate({ name: name.trim(), intro: intro.trim(), lookingFor, maxMembers });
+              const code = onCreate({ name: name.trim(), intro: intro.trim(), lookingFor, maxMembers, hackathonSlug });
               setInviteCode(code);
               setStep(2);
             }}
@@ -496,7 +513,6 @@ function CampContent() {
   const [selectedSubRole, setSelectedSubRole] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showRandomModal, setShowRandomModal] = useState(false);
-  const [localTeams, setLocalTeams] = useState<Team[]>([]);
 
   const myTeamCodes = new Set(profile?.myTeamCodes ?? []);
 
@@ -506,15 +522,11 @@ function CampContent() {
     if (slug) setSelectedHackathon(slug);
   }, [searchParams]);
 
-  useEffect(() => {
-    setLocalTeams(teams);
-  }, [teams]);
-
   const selectedHackathonInfo = hackathons.find((h) => h.slug === selectedHackathon) ?? null;
 
   const activeCategory = ROLE_CATEGORIES.find((c) => c.label === selectedCategory) ?? null;
 
-  const openTeams = localTeams
+  const openTeams = teams
     .filter((t) => t.isOpen)
     .filter((t) => !selectedHackathon || t.hackathonSlug === selectedHackathon)
     .filter((t) => {
@@ -524,8 +536,12 @@ function CampContent() {
     });
 
   const handleRandomMatch = (hackathonSlug: string, subRole: string | null, category: string | null) => {
+    if (isAlreadyInHackathon(hackathonSlug)) {
+      toast.error("이미 같은 대회의 팀에 소속되어 있습니다");
+      return false;
+    }
     const categoryObj = ROLE_CATEGORIES.find((c) => c.label === category) ?? null;
-    const candidates = localTeams
+    const candidates = teams
       .filter((t) => t.isOpen && t.hackathonSlug === hackathonSlug)
       .filter((t) => {
         if (subRole) return t.lookingFor.includes(subRole);
@@ -544,28 +560,41 @@ function CampContent() {
     return true;
   };
 
+  const isAlreadyInHackathon = (hackathonSlug: string): boolean => {
+    if (!hackathonSlug) return false;
+    return teams
+      .filter((t) => myTeamCodes.has(t.teamCode))
+      .some((t) => t.hackathonSlug === hackathonSlug);
+  };
+
   const handleApply = (teamCode: string) => {
+    const targetTeam = teams.find((t) => t.teamCode === teamCode);
+    if (targetTeam?.hackathonSlug && isAlreadyInHackathon(targetTeam.hackathonSlug)) {
+      toast.error("이미 같은 대회의 팀에 소속되어 있습니다");
+      return;
+    }
     joinTeam(teamCode);
     toast.success("지원 완료! 팀장의 수락을 기다려주세요 🤝");
   };
 
-  const handleCreateTeam = (data: { name: string; intro: string; lookingFor: string[]; maxMembers: number }): string => {
+  const handleCreateTeam = (data: { name: string; intro: string; lookingFor: string[]; maxMembers: number; hackathonSlug: string }): string => {
     const inviteCode = "INV-" + Math.random().toString(36).slice(2, 7).toUpperCase();
     const inviteUrl = `${window.location.origin}/invite/${inviteCode}`;
     const teamCode = "T-" + Math.random().toString(36).slice(2, 6).toUpperCase();
     const newTeam: Team = {
       teamCode,
-      hackathonSlug: selectedHackathon ?? "",
+      hackathonSlug: data.hackathonSlug,
       name: data.name,
       isOpen: data.lookingFor.length > 0,
       memberCount: 1,
+      members: [profile?.nickname ?? ""],
+      leader: profile?.nickname ?? "",
       lookingFor: data.lookingFor,
       intro: data.intro || "새로 만들어진 팀입니다.",
       contact: { type: "link", url: inviteUrl },
       createdAt: new Date().toISOString(),
     };
     addTeam(newTeam);
-    setLocalTeams((prev) => [newTeam, ...prev]);
     joinTeam(teamCode);
     toast.success(`🚀 "${data.name}" 팀이 생성됐습니다!`);
     return inviteCode;
@@ -783,7 +812,7 @@ function CampContent() {
       )}
 
       {showCreateModal && (
-        <CreateTeamModal onClose={() => setShowCreateModal(false)} onCreate={handleCreateTeam} />
+        <CreateTeamModal onClose={() => setShowCreateModal(false)} onCreate={handleCreateTeam} hackathons={hackathons} />
       )}
 
       {showRandomModal && (

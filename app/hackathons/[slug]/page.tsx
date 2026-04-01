@@ -7,7 +7,6 @@ import { useStore } from "@/lib/store";
 import { getHackathonDetail } from "@/lib/detailData";
 import { formatPrize, dDayLabel, isRushMode } from "@/lib/utils";
 import StatusBadge from "@/components/StatusBadge";
-import type { Submission } from "@/lib/types";
 
 const MEDAL_EMOJI: Record<string, string> = { "1st": "🥇", "2nd": "🥈", "3rd": "🥉" };
 const MEDAL_COLORS: Record<string, string> = { "1st": "#fbbf24", "2nd": "#94a3b8", "3rd": "#b45309" };
@@ -19,7 +18,6 @@ const SECTIONS = [
   { id: "schedule", label: "일정" },
   { id: "eval", label: "평가 기준" },
   { id: "teams", label: "팀 찾기" },
-  { id: "submit", label: "제출" },
 ];
 
 const ROLE_COLORS: Record<string, string> = {
@@ -48,9 +46,6 @@ export default function HackathonDetailPage({ params }: { params: Promise<{ slug
   const profile = useStore((s) => s.profile);
   const initialized = useStore((s) => s.initialized);
   const toggleBookmark = useStore((s) => s.toggleBookmark);
-  const addBadge = useStore((s) => s.addBadge);
-  const updateLeaderboard = useStore((s) => s.updateLeaderboard);
-  const addTimelineEvent = useStore((s) => s.addTimelineEvent);
 
   const hackathon = hackathons.find((h) => h.slug === slug) ?? null;
   const hackathonTeams = teams.filter((t) => t.hackathonSlug === slug && t.isOpen);
@@ -61,30 +56,12 @@ export default function HackathonDetailPage({ params }: { params: Promise<{ slug
   const [mounted, setMounted] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
   const [activeSection, setActiveSection] = useState("prize");
-  const [submitted, setSubmitted] = useState(false);
-  const [submissions, setSubmissions] = useState<Submission[]>([]);
-
-  // 폼 state
-  const [githubUrl, setGithubUrl] = useState("");
-  const [demoUrl, setDemoUrl] = useState("");
-  const [pdfUrl, setPdfUrl] = useState("");
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     setMounted(true);
     setIsDesktop(window.innerWidth >= 1024);
     const onResize = () => setIsDesktop(window.innerWidth >= 1024);
     window.addEventListener("resize", onResize);
-
-    // localStorage에서 제출 내역 로드
-    try {
-      const raw = localStorage.getItem("hh_submissions");
-      if (raw) {
-        const all: Submission[] = JSON.parse(raw);
-        setSubmissions(all.filter((s) => s.hackathonSlug === slug));
-      }
-    } catch {}
 
     return () => window.removeEventListener("resize", onResize);
   }, [slug]);
@@ -155,85 +132,9 @@ export default function HackathonDetailPage({ params }: { params: Promise<{ slug
   const isBookmarked = profile?.bookmarks.includes(slug) ?? false;
 
   // HackHack Gauge
-  const fever =
-    Math.min(hackathonTeams.length / 10, 1) * 0.5 +
-    Math.min(submissions.length / 10, 1) * 0.5;
+  const fever = Math.min(hackathonTeams.length / 10, 1);
   const gaugeLabel = fever >= 0.7 ? "💨 핵핵!" : fever >= 0.3 ? "🏃 달리는 중" : "🚶 잠잠";
   const gaugeColor = fever >= 0.7 ? "#ef4444" : fever >= 0.3 ? "#f59e0b" : "var(--muted)";
-
-  async function handleSubmit() {
-    const newErrors: Record<string, string> = {};
-    if (!githubUrl || !/^https?:\/\//.test(githubUrl)) {
-      newErrors.github = "올바른 GitHub URL을 입력해주세요 (https:// 시작)";
-    }
-    if (!demoUrl || !/^https?:\/\//.test(demoUrl)) {
-      newErrors.demo = "올바른 시연 URL을 입력해주세요 (https:// 시작)";
-    }
-    if (pdfUrl && !/^https?:\/\//.test(pdfUrl)) {
-      newErrors.pdf = "올바른 PDF URL을 입력해주세요 (https:// 시작)";
-    }
-    setErrors(newErrors);
-    if (Object.keys(newErrors).length > 0) return;
-
-    setSubmitting(true);
-    try {
-      const newSub: Submission = {
-        id: crypto.randomUUID(),
-        hackathonSlug: slug,
-        githubUrl,
-        demoUrl,
-        pdfUrl: pdfUrl || undefined,
-        submittedAt: new Date().toISOString(),
-      };
-
-      // localStorage 저장
-      const raw = localStorage.getItem("hh_submissions");
-      const all: Submission[] = raw ? JSON.parse(raw) : [];
-      localStorage.setItem("hh_submissions", JSON.stringify([...all, newSub]));
-      setSubmissions((prev) => [...prev, newSub]);
-
-      // 리더보드 갱신
-      updateLeaderboard(slug, {
-        teamName: profile?.nickname ?? "익명",
-        score: 0,
-        submittedAt: newSub.submittedAt,
-      });
-
-      // 타임라인 기록
-      addTimelineEvent({
-        type: "submit",
-        hackathonSlug: slug,
-        hackathonTitle: hackathon?.title ?? "",
-        at: newSub.submittedAt,
-        detail: "첫 제출",
-      });
-
-      // 배지 발급
-      if (!profile?.badges.some((b) => b.id === "submitted")) {
-        addBadge({
-          id: "submitted",
-          emoji: "📦",
-          label: "제출 완료!",
-          description: "첫 결과물을 제출했습니다",
-        });
-        toast.success("📦 '제출 완료!' 배지를 획득했습니다!");
-      }
-
-      // confetti
-      const confetti = (await import("canvas-confetti")).default;
-      confetti({
-        particleCount: 120,
-        spread: 80,
-        origin: { y: 0.6 },
-        colors: ["#7c3aed", "#a78bfa", "#10b981", "#f59e0b"],
-      });
-
-      toast.success("🎉 제출이 완료됐습니다! 리더보드를 확인하세요.");
-      setSubmitted(true);
-    } finally {
-      setSubmitting(false);
-    }
-  }
 
   return (
     <div>
@@ -298,7 +199,7 @@ export default function HackathonDetailPage({ params }: { params: Promise<{ slug
             />
           </div>
           <div style={{ fontSize: "0.8rem", color: "var(--muted)", whiteSpace: "nowrap" }}>
-            팀 {hackathonTeams.length} · 제출 {submissions.length}
+            팀 {hackathonTeams.length}
           </div>
         </div>
       </div>
@@ -327,11 +228,7 @@ export default function HackathonDetailPage({ params }: { params: Promise<{ slug
                     transition: "all 0.15s",
                   }}
                 >
-                  {s.id === "submit" && rushMode && hackathon.status !== "ended" ? (
-                    <span style={{ animation: "pulse 1s infinite" }}>🔥 {s.label}</span>
-                  ) : (
-                    s.label
-                  )}
+                  {s.label}
                 </button>
               ))}
             </nav>
@@ -689,6 +586,20 @@ export default function HackathonDetailPage({ params }: { params: Promise<{ slug
                       >
                         내 팀 보기 →
                       </Link>
+                    ) : hackathon.status === "ended" ? (
+                      <span style={{
+                        flexShrink: 0,
+                        padding: "0.45rem 0.875rem",
+                        background: "rgba(107,107,128,0.08)",
+                        color: "var(--muted)",
+                        borderRadius: 8,
+                        fontSize: "0.82rem",
+                        fontWeight: 600,
+                        border: "1px solid rgba(107,107,128,0.2)",
+                        whiteSpace: "nowrap",
+                      }}>
+                        🔒 지원 불가
+                      </span>
                     ) : team.isOpen && (
                       <a
                         href={team.contact.url}
@@ -738,135 +649,6 @@ export default function HackathonDetailPage({ params }: { params: Promise<{ slug
             )}
           </section>
 
-          {/* 섹션 7: 제출 */}
-          <section id="submit">
-            <h2 className="section-title">제출</h2>
-
-            {detail?.sections.submit.guide && detail.sections.submit.guide.length > 0 && (
-              <div className="card" style={{ padding: "1.25rem", marginBottom: "1rem" }}>
-                <div style={{ fontWeight: 700, marginBottom: "0.6rem", color: "var(--text)" }}>📋 제출 가이드</div>
-                <ol style={{ margin: 0, padding: "0 0 0 1.25rem", display: "flex", flexDirection: "column", gap: "0.4rem" }}>
-                  {detail.sections.submit.guide.map((g, i) => (
-                    <li key={i} style={{ color: "var(--muted)", fontSize: "0.9rem", lineHeight: 1.6 }}>{g}</li>
-                  ))}
-                </ol>
-              </div>
-            )}
-
-            {hackathon.status === "ended" ? (
-              <div className="card" style={{ padding: "2rem", textAlign: "center", border: "1px solid var(--border)" }}>
-                <div style={{ fontSize: "1.5rem", marginBottom: "0.5rem" }}>🔒</div>
-                <div style={{ fontWeight: 700, color: "var(--text)", marginBottom: "0.25rem" }}>제출 마감</div>
-                <div style={{ color: "var(--muted)", fontSize: "0.9rem" }}>이 해커톤은 종료되었습니다.</div>
-              </div>
-            ) : submitted ? (
-              <div className="card" style={{ padding: "2rem", textAlign: "center", border: "1px solid rgba(16,185,129,0.3)" }}>
-                <div style={{ fontSize: "1.5rem", marginBottom: "0.5rem" }}>🎉</div>
-                <div style={{ fontWeight: 700, color: "#10b981", marginBottom: "0.25rem" }}>제출 완료!</div>
-                <div style={{ color: "var(--muted)", fontSize: "0.9rem" }}>리더보드에 반영되었습니다.</div>
-              </div>
-            ) : (
-              <div className="card" style={{ padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
-                <div>
-                  <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 600, color: "var(--text)", marginBottom: "0.4rem" }}>
-                    GitHub URL <span style={{ color: "#ef4444" }}>*</span>
-                  </label>
-                  <input
-                    type="url"
-                    value={githubUrl}
-                    onChange={(e) => setGithubUrl(e.target.value)}
-                    placeholder="https://github.com/..."
-                    style={{
-                      width: "100%",
-                      padding: "0.6rem 0.875rem",
-                      background: "var(--surface2)",
-                      border: `1px solid ${errors.github ? "#ef4444" : "var(--border)"}`,
-                      borderRadius: 8,
-                      color: "var(--text)",
-                      fontSize: "0.9rem",
-                      outline: "none",
-                      boxSizing: "border-box",
-                    }}
-                  />
-                  {errors.github && <div style={{ color: "#ef4444", fontSize: "0.8rem", marginTop: "0.25rem" }}>{errors.github}</div>}
-                </div>
-
-                <div>
-                  <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 600, color: "var(--text)", marginBottom: "0.4rem" }}>
-                    시연 URL <span style={{ color: "#ef4444" }}>*</span>
-                  </label>
-                  <input
-                    type="url"
-                    value={demoUrl}
-                    onChange={(e) => setDemoUrl(e.target.value)}
-                    placeholder="https://..."
-                    style={{
-                      width: "100%",
-                      padding: "0.6rem 0.875rem",
-                      background: "var(--surface2)",
-                      border: `1px solid ${errors.demo ? "#ef4444" : "var(--border)"}`,
-                      borderRadius: 8,
-                      color: "var(--text)",
-                      fontSize: "0.9rem",
-                      outline: "none",
-                      boxSizing: "border-box",
-                    }}
-                  />
-                  {errors.demo && <div style={{ color: "#ef4444", fontSize: "0.8rem", marginTop: "0.25rem" }}>{errors.demo}</div>}
-                </div>
-
-                {detail?.sections.submit.allowedArtifactTypes.includes("pdf") && (
-                  <div>
-                    <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 600, color: "var(--text)", marginBottom: "0.4rem" }}>
-                      PDF URL <span style={{ color: "var(--muted)", fontWeight: 400 }}>(선택)</span>
-                    </label>
-                    <input
-                      type="url"
-                      value={pdfUrl}
-                      onChange={(e) => setPdfUrl(e.target.value)}
-                      placeholder="https://..."
-                      style={{
-                        width: "100%",
-                        padding: "0.6rem 0.875rem",
-                        background: "var(--surface2)",
-                        border: `1px solid ${errors.pdf ? "#ef4444" : "var(--border)"}`,
-                        borderRadius: 8,
-                        color: "var(--text)",
-                        fontSize: "0.9rem",
-                        outline: "none",
-                        boxSizing: "border-box",
-                      }}
-                    />
-                    {errors.pdf && <div style={{ color: "#ef4444", fontSize: "0.8rem", marginTop: "0.25rem" }}>{errors.pdf}</div>}
-                  </div>
-                )}
-
-                <button
-                  onClick={handleSubmit}
-                  disabled={submitting}
-                  style={{
-                    padding: "0.75rem",
-                    background: submitting ? "var(--border)" : rushMode ? "#ef4444" : "var(--accent)",
-                    color: "#fff",
-                    border: "none",
-                    borderRadius: 8,
-                    fontWeight: 700,
-                    fontSize: "1rem",
-                    cursor: submitting ? "not-allowed" : "pointer",
-                    transition: "background 0.2s",
-                  }}
-                >
-                  {submitting ? "제출 중..." : rushMode ? "🔥 지금 제출하기" : "제출하기"}
-                </button>
-
-                {!profile && (
-                  <div style={{ fontSize: "0.8rem", color: "var(--muted)", textAlign: "center" }}>
-                    닉네임을 설정하면 리더보드에 표시됩니다.
-                  </div>
-                )}
-              </div>
-            )}
-          </section>
         </main>
       </div>
     </div>

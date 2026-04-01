@@ -40,6 +40,8 @@ interface StoreState {
   leaveTeam: (teamCode: string) => void;
   addTeam: (team: Team) => void;
   updateTeam: (teamCode: string, updates: Partial<Team>) => void;
+  deleteTeam: (teamCode: string) => void;
+  delegateLeader: (teamCode: string, newLeader: string) => void;
 }
 
 export const useStore = create<StoreState>((set, get) => ({
@@ -162,21 +164,41 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   joinTeam: (teamCode: string) => {
-    const { profile } = get();
+    const { profile, teams } = get();
     if (!profile) return;
     const myTeamCodes = profile.myTeamCodes ?? [];
     if (myTeamCodes.includes(teamCode)) return;
-    const updated = { ...profile, myTeamCodes: [...myTeamCodes, teamCode] };
-    saveProfile(updated);
-    set({ profile: updated });
+    const updatedProfile = { ...profile, myTeamCodes: [...myTeamCodes, teamCode] };
+    saveProfile(updatedProfile);
+    const updatedTeams = teams.map((t) =>
+      t.teamCode === teamCode
+        ? {
+            ...t,
+            members: [...(t.members ?? []).filter((m) => m !== profile.nickname), profile.nickname],
+            memberCount: (t.members ?? []).includes(profile.nickname) ? t.memberCount : t.memberCount + 1,
+          }
+        : t
+    );
+    localStorage.setItem(LS_KEYS.teams, JSON.stringify(updatedTeams));
+    set({ profile: updatedProfile, teams: updatedTeams });
   },
 
   leaveTeam: (teamCode: string) => {
-    const { profile } = get();
+    const { profile, teams } = get();
     if (!profile) return;
-    const updated = { ...profile, myTeamCodes: (profile.myTeamCodes ?? []).filter((c) => c !== teamCode) };
-    saveProfile(updated);
-    set({ profile: updated });
+    const updatedProfile = { ...profile, myTeamCodes: (profile.myTeamCodes ?? []).filter((c) => c !== teamCode) };
+    saveProfile(updatedProfile);
+    const updatedTeams = teams.map((t) =>
+      t.teamCode === teamCode
+        ? {
+            ...t,
+            members: (t.members ?? []).filter((m) => m !== profile.nickname),
+            memberCount: Math.max(0, t.memberCount - 1),
+          }
+        : t
+    );
+    localStorage.setItem(LS_KEYS.teams, JSON.stringify(updatedTeams));
+    set({ profile: updatedProfile, teams: updatedTeams });
   },
 
   addTeam: (team: Team) => {
@@ -189,6 +211,24 @@ export const useStore = create<StoreState>((set, get) => ({
   updateTeam: (teamCode: string, updates: Partial<Team>) => {
     const { teams } = get();
     const updated = teams.map((t) => t.teamCode === teamCode ? { ...t, ...updates } : t);
+    localStorage.setItem(LS_KEYS.teams, JSON.stringify(updated));
+    set({ teams: updated });
+  },
+
+  deleteTeam: (teamCode: string) => {
+    const { teams, profile } = get();
+    const updatedTeams = teams.filter((t) => t.teamCode !== teamCode);
+    localStorage.setItem(LS_KEYS.teams, JSON.stringify(updatedTeams));
+    const updatedProfile = profile
+      ? { ...profile, myTeamCodes: (profile.myTeamCodes ?? []).filter((c) => c !== teamCode) }
+      : profile;
+    if (updatedProfile) saveProfile(updatedProfile);
+    set({ teams: updatedTeams, profile: updatedProfile });
+  },
+
+  delegateLeader: (teamCode: string, newLeader: string) => {
+    const { teams } = get();
+    const updated = teams.map((t) => t.teamCode === teamCode ? { ...t, leader: newLeader } : t);
     localStorage.setItem(LS_KEYS.teams, JSON.stringify(updated));
     set({ teams: updated });
   },

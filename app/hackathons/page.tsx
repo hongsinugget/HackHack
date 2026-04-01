@@ -143,6 +143,8 @@ function HackathonsContent() {
     .filter((h) => !q || h.title.toLowerCase().includes(q) || h.tags.some((t) => t.toLowerCase().includes(q)))
     .filter((h) => statusFilter === "all" || h.status === statusFilter)
     .filter((h) => !tagFilter || h.tags.includes(tagFilter))
+    // 마감임박순·상금높은순에서 종료된 대회는 제외 (직접 "종료" 필터 선택 시는 표시)
+    .filter((h) => statusFilter === "ended" || h.status !== "ended")
     .sort((a, b) => {
       if (sort === "prize") return (b.maxPrizeKRW ?? 0) - (a.maxPrizeKRW ?? 0);
       return new Date(a.period.submissionDeadlineAt).getTime() - new Date(b.period.submissionDeadlineAt).getTime();
