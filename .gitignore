@@ -23,6 +23,13 @@ config/secrets.*
 CLAUDE.md
 plan-progress.md
 
+# 루트 레벨 디자인 레퍼런스 / 원본 에셋 (public/ 복사본으로 서빙)
+/*.png
+/*.jpg
+/*.jpeg
+/*.webp
+/*.gif
+
 # OS 파일
 .DS_Store
 Thumbs.db

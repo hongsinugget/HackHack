@@ -6,7 +6,7 @@ export const seedHackathons: Hackathon[] = [
     title: "Aimers 8기 : 모델 경량화 온라인 해커톤",
     status: "ended",
     tags: ["LLM", "Compression", "vLLM"],
-    thumbnailUrl: "",
+    thumbnailUrl: "/thumbnails/aimers-8-model-lite.svg",
     period: {
       timezone: "Asia/Seoul",
       submissionDeadlineAt: "2026-02-25T10:00:00+09:00",
@@ -24,7 +24,7 @@ export const seedHackathons: Hackathon[] = [
     title: "월간 해커톤 : 바이브 코딩 개선 AI 아이디어 공모전",
     status: "ongoing",
     tags: ["Idea", "GenAI", "Workflow"],
-    thumbnailUrl: "",
+    thumbnailUrl: "/thumbnails/monthly-vibe-coding-2026-02.svg",
     period: {
       timezone: "Asia/Seoul",
       submissionDeadlineAt: "2026-04-03T10:00:00+09:00",
@@ -42,7 +42,7 @@ export const seedHackathons: Hackathon[] = [
     title: "긴급 인수인계 해커톤: 명세서만 보고 구현하라",
     status: "ongoing",
     tags: ["VibeCoding", "Web", "Vercel", "Handover"],
-    thumbnailUrl: "",
+    thumbnailUrl: "/thumbnails/daker-handover-2026-03.svg",
     period: {
       timezone: "Asia/Seoul",
       submissionDeadlineAt: "2026-04-06T10:00:00+09:00",
@@ -60,7 +60,7 @@ export const seedHackathons: Hackathon[] = [
     title: "Next AI Sprint 2026: 실시간 AI 서비스 구축",
     status: "upcoming",
     tags: ["AI", "Realtime", "API"],
-    thumbnailUrl: "",
+    thumbnailUrl: "/thumbnails/next-ai-sprint-2026.svg",
     period: {
       timezone: "Asia/Seoul",
       submissionDeadlineAt: "2026-05-15T10:00:00+09:00",

@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Hackathon, Team, Leaderboard, Profile, Badge } from "./types";
+import type { Hackathon, Team, Leaderboard, LeaderboardEntry, Profile, Badge, TimelineEvent } from "./types";
 import { seedHackathons, seedTeams, seedLeaderboards } from "./seed";
 
 const LS_KEYS = {
@@ -34,6 +34,8 @@ interface StoreState {
   updateNickname: (nickname: string) => void;
   addBadge: (badge: Omit<Badge, "earnedAt">) => void;
   toggleBookmark: (slug: string) => void;
+  updateLeaderboard: (slug: string, entry: Omit<LeaderboardEntry, "rank">) => void;
+  addTimelineEvent: (event: TimelineEvent) => void;
 }
 
 export const useStore = create<StoreState>((set, get) => ({
@@ -116,6 +118,40 @@ export const useStore = create<StoreState>((set, get) => ({
       ? profile.bookmarks.filter((s) => s !== slug)
       : [...profile.bookmarks, slug];
     const updated = { ...profile, bookmarks };
+    saveProfile(updated);
+    set({ profile: updated });
+  },
+
+  updateLeaderboard: (slug: string, entry: Omit<LeaderboardEntry, "rank">) => {
+    const { leaderboards } = get();
+    const idx = leaderboards.findIndex((lb) => lb.hackathonSlug === slug);
+    let updated: Leaderboard[];
+    if (idx >= 0) {
+      const lb = leaderboards[idx];
+      const newEntry: LeaderboardEntry = { ...entry, rank: lb.entries.length + 1 };
+      updated = leaderboards.map((lb, i) =>
+        i === idx
+          ? { ...lb, entries: [...lb.entries, newEntry], updatedAt: new Date().toISOString() }
+          : lb
+      );
+    } else {
+      updated = [
+        ...leaderboards,
+        {
+          hackathonSlug: slug,
+          updatedAt: new Date().toISOString(),
+          entries: [{ ...entry, rank: 1 }],
+        },
+      ];
+    }
+    localStorage.setItem(LS_KEYS.leaderboards, JSON.stringify(updated));
+    set({ leaderboards: updated });
+  },
+
+  addTimelineEvent: (event: TimelineEvent) => {
+    const { profile } = get();
+    if (!profile) return;
+    const updated = { ...profile, timeline: [...profile.timeline, event] };
     saveProfile(updated);
     set({ profile: updated });
   },
