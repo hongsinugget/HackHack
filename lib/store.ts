@@ -29,6 +29,7 @@ interface StoreState {
   profile: Profile | null;
   showNicknameModal: boolean;
   initialized: boolean;
+  initError: string | null;
   init: () => void;
   setNickname: (nickname: string) => void;
   updateNickname: (nickname: string) => void;
@@ -42,6 +43,7 @@ interface StoreState {
   updateTeam: (teamCode: string, updates: Partial<Team>) => void;
   deleteTeam: (teamCode: string) => void;
   delegateLeader: (teamCode: string, newLeader: string) => void;
+  kickMember: (teamCode: string, nickname: string) => void;
 }
 
 export const useStore = create<StoreState>((set, get) => ({
@@ -51,26 +53,35 @@ export const useStore = create<StoreState>((set, get) => ({
   profile: null,
   showNicknameModal: false,
   initialized: false,
+  initError: null,
 
   init: () => {
-    const hackathons = loadOrSeed<Hackathon>(LS_KEYS.hackathons, seedHackathons);
-    const teams = loadOrSeed<Team>(LS_KEYS.teams, seedTeams);
-    const leaderboards = loadOrSeed<Leaderboard>(LS_KEYS.leaderboards, seedLeaderboards);
-
-    let profile: Profile | null = null;
     try {
-      const raw = localStorage.getItem(LS_KEYS.profile);
-      if (raw) profile = JSON.parse(raw) as Profile;
-    } catch {}
+      const hackathons = loadOrSeed<Hackathon>(LS_KEYS.hackathons, seedHackathons);
+      const teams = loadOrSeed<Team>(LS_KEYS.teams, seedTeams);
+      const leaderboards = loadOrSeed<Leaderboard>(LS_KEYS.leaderboards, seedLeaderboards);
 
-    set({
-      hackathons,
-      teams,
-      leaderboards,
-      profile,
-      showNicknameModal: !profile,
-      initialized: true,
-    });
+      let profile: Profile | null = null;
+      try {
+        const raw = localStorage.getItem(LS_KEYS.profile);
+        if (raw) profile = JSON.parse(raw) as Profile;
+      } catch {}
+
+      set({
+        hackathons,
+        teams,
+        leaderboards,
+        profile,
+        showNicknameModal: !profile,
+        initialized: true,
+        initError: null,
+      });
+    } catch (e) {
+      set({
+        initialized: true,
+        initError: e instanceof Error ? e.message : "데이터를 불러오는 중 오류가 발생했습니다.",
+      });
+    }
   },
 
   setNickname: (nickname: string) => {
@@ -164,12 +175,57 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   joinTeam: (teamCode: string) => {
-    const { profile, teams } = get();
+    const { profile, teams, hackathons } = get();
     if (!profile) return;
     const myTeamCodes = profile.myTeamCodes ?? [];
     if (myTeamCodes.includes(teamCode)) return;
-    const updatedProfile = { ...profile, myTeamCodes: [...myTeamCodes, teamCode] };
+
+    const team = teams.find((t) => t.teamCode === teamCode);
+    const hackathon = team ? hackathons.find((h) => h.slug === team.hackathonSlug) : null;
+    const isCreating = !!team && team.leader === profile.nickname;
+    const now = new Date().toISOString();
+
+    // 배지: 🤝 최강단짝
+    const badges = [...profile.badges];
+    if (!badges.some((b) => b.id === "best_partner")) {
+      badges.push({
+        id: "best_partner",
+        emoji: "🤝",
+        label: "최강단짝",
+        description: "팀에 합류하거나 팀을 만들었습니다",
+        earnedAt: now,
+      });
+    }
+
+    // 타임라인: 팀 합류/생성 이벤트
+    const newEvent: TimelineEvent = {
+      type: "join",
+      hackathonSlug: team?.hackathonSlug ?? "",
+      hackathonTitle: hackathon?.title ?? "",
+      at: now,
+      detail: isCreating ? `팀 생성: ${team?.name}` : `팀 합류: ${team?.name}`,
+    };
+    const timeline = [...profile.timeline, newEvent];
+
+    // 배지: 🔁 단골손님 (2개 이상 해커톤 참가)
+    const joinedSlugs = new Set(
+      timeline
+        .filter((e) => e.type === "join" && e.hackathonSlug !== "")
+        .map((e) => e.hackathonSlug)
+    );
+    if (joinedSlugs.size >= 2 && !badges.some((b) => b.id === "regular")) {
+      badges.push({
+        id: "regular",
+        emoji: "🔁",
+        label: "단골손님",
+        description: "2개 이상의 해커톤에 참가했습니다",
+        earnedAt: now,
+      });
+    }
+
+    const updatedProfile = { ...profile, myTeamCodes: [...myTeamCodes, teamCode], badges, timeline };
     saveProfile(updatedProfile);
+
     const updatedTeams = teams.map((t) =>
       t.teamCode === teamCode
         ? {
@@ -186,17 +242,21 @@ export const useStore = create<StoreState>((set, get) => ({
   leaveTeam: (teamCode: string) => {
     const { profile, teams } = get();
     if (!profile) return;
+    const team = teams.find((t) => t.teamCode === teamCode);
     const updatedProfile = { ...profile, myTeamCodes: (profile.myTeamCodes ?? []).filter((c) => c !== teamCode) };
     saveProfile(updatedProfile);
-    const updatedTeams = teams.map((t) =>
-      t.teamCode === teamCode
-        ? {
-            ...t,
-            members: (t.members ?? []).filter((m) => m !== profile.nickname),
-            memberCount: Math.max(0, t.memberCount - 1),
-          }
-        : t
-    );
+    // 팀장이 나가면 팀 자체를 삭제해 모집 목록에 유령 팀이 남지 않도록 처리
+    const updatedTeams = team?.leader === profile.nickname
+      ? teams.filter((t) => t.teamCode !== teamCode)
+      : teams.map((t) =>
+          t.teamCode === teamCode
+            ? {
+                ...t,
+                members: (t.members ?? []).filter((m) => m !== profile.nickname),
+                memberCount: Math.max(0, t.memberCount - 1),
+              }
+            : t
+        );
     localStorage.setItem(LS_KEYS.teams, JSON.stringify(updatedTeams));
     set({ profile: updatedProfile, teams: updatedTeams });
   },
@@ -229,6 +289,21 @@ export const useStore = create<StoreState>((set, get) => ({
   delegateLeader: (teamCode: string, newLeader: string) => {
     const { teams } = get();
     const updated = teams.map((t) => t.teamCode === teamCode ? { ...t, leader: newLeader } : t);
+    localStorage.setItem(LS_KEYS.teams, JSON.stringify(updated));
+    set({ teams: updated });
+  },
+
+  kickMember: (teamCode: string, nickname: string) => {
+    const { teams } = get();
+    const updated = teams.map((t) =>
+      t.teamCode === teamCode
+        ? {
+            ...t,
+            members: (t.members ?? []).filter((m) => m !== nickname),
+            memberCount: Math.max(0, t.memberCount - 1),
+          }
+        : t
+    );
     localStorage.setItem(LS_KEYS.teams, JSON.stringify(updated));
     set({ teams: updated });
   },

@@ -139,6 +139,7 @@ function LeaderboardTable({ entries }: { entries: LeaderboardEntry[] }) {
 export default function RankingsPage() {
   const { leaderboards, hackathons, initialized } = useStore();
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
+  const [period, setPeriod] = useState<"all" | "30d" | "7d">("all");
 
   useEffect(() => {
     if (leaderboards.length > 0 && !selectedSlug) {
@@ -151,6 +152,14 @@ export default function RankingsPage() {
   }, [leaderboards, selectedSlug]);
 
   const currentBoard: Leaderboard | undefined = leaderboards.find((b) => b.hackathonSlug === selectedSlug);
+
+  const filteredEntries = (() => {
+    if (!currentBoard) return [];
+    if (period === "all") return currentBoard.entries;
+    const days = period === "7d" ? 7 : 30;
+    const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    return currentBoard.entries.filter((e) => new Date(e.submittedAt) >= cutoff);
+  })();
 
   const getTitle = (slug: string) =>
     hackathons.find((h) => h.slug === slug)?.title ?? slug;
@@ -188,17 +197,49 @@ export default function RankingsPage() {
         </div>
       )}
 
+      {/* 기간 필터 */}
+      {initialized && (
+        <div style={{ display: "flex", gap: "0.375rem", marginBottom: "1.5rem" }}>
+          {(["all", "30d", "7d"] as const).map((p) => {
+            const label = p === "all" ? "전체" : p === "30d" ? "최근 30일" : "최근 7일";
+            return (
+              <button
+                key={p}
+                onClick={() => setPeriod(p)}
+                style={{
+                  padding: "0.4rem 0.875rem",
+                  borderRadius: 8,
+                  fontSize: "0.8rem",
+                  fontWeight: period === p ? 700 : 400,
+                  background: period === p ? "rgba(124,58,237,0.18)" : "var(--surface)",
+                  color: period === p ? "#a78bfa" : "var(--muted)",
+                  border: period === p ? "1px solid rgba(124,58,237,0.35)" : "1px solid var(--border)",
+                  cursor: "pointer",
+                  transition: "all 0.15s",
+                }}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {!initialized ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
           {[300, 200].map((h, i) => (
             <div key={i} style={{ height: h, borderRadius: 12, background: "var(--surface)", animation: "pulse 1.5s ease-in-out infinite" }} />
           ))}
         </div>
-      ) : !currentBoard || currentBoard.entries.length === 0 ? (
+      ) : !currentBoard || filteredEntries.length === 0 ? (
         <div style={{ textAlign: "center", padding: "4rem 2rem", background: "var(--surface)", borderRadius: 12, border: "1px solid var(--border)" }}>
           <div style={{ fontSize: "2rem", marginBottom: "0.75rem" }}>🏁</div>
-          <div style={{ fontWeight: 700, marginBottom: "0.375rem" }}>아직 순위 데이터가 없습니다</div>
-          <div style={{ fontSize: "0.85rem", color: "var(--muted)" }}>결과물을 제출하면 리더보드에 반영됩니다</div>
+          <div style={{ fontWeight: 700, marginBottom: "0.375rem" }}>
+            {currentBoard && period !== "all" ? "해당 기간에 제출된 결과가 없습니다" : "아직 순위 데이터가 없습니다"}
+          </div>
+          <div style={{ fontSize: "0.85rem", color: "var(--muted)" }}>
+            {currentBoard && period !== "all" ? "다른 기간을 선택해보세요" : "결과물을 제출하면 리더보드에 반영됩니다"}
+          </div>
         </div>
       ) : (
         <div>
@@ -212,12 +253,12 @@ export default function RankingsPage() {
           </div>
 
           {/* 포디움 */}
-          {currentBoard.entries.length >= 2 && (
-            <Podium entries={currentBoard.entries} />
+          {filteredEntries.length >= 2 && (
+            <Podium entries={filteredEntries} />
           )}
 
           {/* 전체 순위표 */}
-          <LeaderboardTable entries={currentBoard.entries} />
+          <LeaderboardTable entries={filteredEntries} />
         </div>
       )}
 

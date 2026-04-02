@@ -18,6 +18,7 @@ const SECTIONS = [
   { id: "schedule", label: "일정" },
   { id: "eval", label: "평가 기준" },
   { id: "teams", label: "팀 찾기" },
+  { id: "submit", label: "제출" },
 ];
 
 const ROLE_COLORS: Record<string, string> = {
@@ -49,13 +50,22 @@ export default function HackathonDetailPage({ params }: { params: Promise<{ slug
 
   const hackathon = hackathons.find((h) => h.slug === slug) ?? null;
   const hackathonTeams = teams.filter((t) => t.hackathonSlug === slug && t.isOpen);
+  const allHackathonTeams = teams.filter((t) => t.hackathonSlug === slug);
   const myTeamCodes = new Set(profile?.myTeamCodes ?? []);
   const leaderboard = leaderboards.find((lb) => lb.hackathonSlug === slug) ?? null;
   const detail = getHackathonDetail(slug);
 
+  // 미제출 팀: 해커톤에 속해있지만 리더보드에 없는 팀
+  const submittedNames = new Set(leaderboard?.entries.map((e) => e.teamName) ?? []);
+  const unsubmittedTeams = allHackathonTeams.filter((t) => !submittedNames.has(t.name));
+
+  // 내 팀 (이 해커톤 소속)
+  const myTeamInHackathon = allHackathonTeams.find((t) => myTeamCodes.has(t.teamCode)) ?? null;
+
   const [mounted, setMounted] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
   const [activeSection, setActiveSection] = useState("prize");
+  const [confirmTarget, setConfirmTarget] = useState<typeof hackathonTeams[0] | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -236,7 +246,7 @@ export default function HackathonDetailPage({ params }: { params: Promise<{ slug
         )}
 
         {/* 본문 */}
-        <main style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "3rem" }}>
+        <main style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "3rem", paddingBottom: "60vh" }}>
           {/* 섹션 1: 상금 */}
           <section id="prize">
             <h2 className="section-title">상금</h2>
@@ -334,6 +344,36 @@ export default function HackathonDetailPage({ params }: { params: Promise<{ slug
               <div className="card" style={{ padding: "2.5rem", textAlign: "center" }}>
                 <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>📊</div>
                 <div style={{ color: "var(--muted)" }}>아직 순위 데이터가 없습니다.</div>
+              </div>
+            )}
+
+            {/* 미제출 팀 */}
+            {unsubmittedTeams.length > 0 && (
+              <div style={{ marginTop: "0.75rem" }}>
+                <div style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--muted)", marginBottom: "0.5rem", paddingLeft: "0.25rem" }}>
+                  미제출
+                </div>
+                <div className="card" style={{ overflow: "hidden" }}>
+                  {unsubmittedTeams.map((team, i) => (
+                    <div
+                      key={team.teamCode}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "1rem",
+                        padding: "0.75rem 1.25rem",
+                        borderBottom: i < unsubmittedTeams.length - 1 ? "1px solid var(--border)" : "none",
+                        opacity: 0.6,
+                      }}
+                    >
+                      <div style={{ width: 32, textAlign: "center", fontSize: "0.85rem", color: "var(--muted)" }}>—</div>
+                      <div style={{ flex: 1, fontWeight: 600, color: "var(--muted)", fontSize: "0.9rem" }}>{team.name}</div>
+                      <div style={{ fontSize: "0.75rem", padding: "0.15rem 0.6rem", borderRadius: 9999, background: "rgba(107,107,128,0.1)", border: "1px solid rgba(107,107,128,0.2)", color: "var(--muted)", whiteSpace: "nowrap" }}>
+                        미제출
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </section>
@@ -506,14 +546,30 @@ export default function HackathonDetailPage({ params }: { params: Promise<{ slug
           <section id="teams">
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
               <h2 className="section-title" style={{ margin: 0 }}>팀 찾기</h2>
-              {detail?.sections.teams.campEnabled && (
-                <Link
-                  href={detail.sections.teams.listUrl}
-                  style={{ fontSize: "0.85rem", color: "var(--accent)", textDecoration: "none", fontWeight: 600 }}
-                >
-                  팀 캠프 →
-                </Link>
-              )}
+              <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                {hackathon.status !== "ended" && (
+                  <Link
+                    href={`/camp?hackathon=${slug}`}
+                    style={{
+                      fontSize: "0.8rem", fontWeight: 700, color: "#a78bfa",
+                      padding: "0.35rem 0.75rem", borderRadius: 8,
+                      border: "1px solid rgba(124,58,237,0.3)",
+                      background: "rgba(124,58,237,0.08)",
+                      textDecoration: "none",
+                    }}
+                  >
+                    + 팀 만들기
+                  </Link>
+                )}
+                {detail?.sections.teams.campEnabled && (
+                  <Link
+                    href={detail.sections.teams.listUrl}
+                    style={{ fontSize: "0.85rem", color: "var(--accent)", textDecoration: "none", fontWeight: 600 }}
+                  >
+                    팀 캠프 →
+                  </Link>
+                )}
+              </div>
             </div>
 
             {hackathonTeams.length > 0 ? (
@@ -601,10 +657,8 @@ export default function HackathonDetailPage({ params }: { params: Promise<{ slug
                         🔒 지원 불가
                       </span>
                     ) : team.isOpen && (
-                      <a
-                        href={team.contact.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <button
+                        onClick={() => setConfirmTarget(team)}
                         style={{
                           flexShrink: 0,
                           padding: "0.45rem 0.875rem",
@@ -613,12 +667,13 @@ export default function HackathonDetailPage({ params }: { params: Promise<{ slug
                           borderRadius: 8,
                           fontSize: "0.85rem",
                           fontWeight: 600,
-                          textDecoration: "none",
+                          border: "none",
+                          cursor: "pointer",
                           whiteSpace: "nowrap",
                         }}
                       >
                         지원하기
-                      </a>
+                      </button>
                     )}
                   </div>
                   );
@@ -649,8 +704,124 @@ export default function HackathonDetailPage({ params }: { params: Promise<{ slug
             )}
           </section>
 
+          {/* 섹션 7: 제출 */}
+          <section id="submit">
+            <h2 className="section-title">제출</h2>
+            {hackathon.status === "ended" ? (
+              <div className="card" style={{ padding: "2rem", textAlign: "center" }}>
+                <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>🔒</div>
+                <div style={{ fontWeight: 700, color: "var(--muted)", marginBottom: "0.375rem" }}>제출 마감</div>
+                <div style={{ fontSize: "0.85rem", color: "var(--muted)" }}>이 해커톤의 제출 기간이 종료되었습니다.</div>
+              </div>
+            ) : myTeamInHackathon ? (
+              <div className="card" style={{ padding: "1.5rem" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1rem" }}>
+                  <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(124,58,237,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.1rem", flexShrink: 0 }}>📤</div>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: "0.95rem" }}>제출은 팀 스페이스에서 진행됩니다</div>
+                    <div style={{ fontSize: "0.8rem", color: "var(--muted)", marginTop: "0.15rem" }}>
+                      <strong style={{ color: "#a78bfa" }}>{myTeamInHackathon.name}</strong> 팀의 스페이스에서 결과물을 제출하세요
+                    </div>
+                  </div>
+                </div>
+                {detail?.sections.submit?.guide && detail.sections.submit.guide.length > 0 && (
+                  <div style={{ background: "var(--surface2)", borderRadius: 8, padding: "0.875rem", marginBottom: "1rem", border: "1px solid var(--border)" }}>
+                    <div style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--muted)", marginBottom: "0.5rem" }}>제출 가이드</div>
+                    <ul style={{ margin: 0, paddingLeft: "1.25rem", display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+                      {detail.sections.submit.guide.map((g, i) => (
+                        <li key={i} style={{ fontSize: "0.83rem", color: "var(--text)", lineHeight: 1.6 }}>{g}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                <Link
+                  href={`/space/${myTeamInHackathon.teamCode}`}
+                  style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", padding: "0.6rem 1.25rem", borderRadius: 8, background: "var(--accent)", color: "#fff", fontWeight: 700, textDecoration: "none", fontSize: "0.875rem" }}
+                >
+                  🏠 팀 스페이스로 이동 →
+                </Link>
+              </div>
+            ) : (
+              <div className="card" style={{ padding: "2rem", textAlign: "center" }}>
+                <div style={{ fontSize: "2rem", marginBottom: "0.75rem" }}>🏕️</div>
+                <div style={{ fontWeight: 700, marginBottom: "0.375rem" }}>팀이 없습니다</div>
+                <div style={{ fontSize: "0.85rem", color: "var(--muted)", marginBottom: "1.25rem" }}>
+                  제출하려면 먼저 팀에 합류하거나 만들어야 합니다
+                </div>
+                <div style={{ display: "flex", gap: "0.75rem", justifyContent: "center", flexWrap: "wrap" }}>
+                  <button
+                    onClick={() => scrollToSection("teams")}
+                    style={{ padding: "0.55rem 1.1rem", borderRadius: 8, background: "rgba(124,58,237,0.12)", color: "#a78bfa", border: "1px solid rgba(124,58,237,0.3)", fontWeight: 600, cursor: "pointer", fontSize: "0.875rem" }}
+                  >
+                    팀 찾기 →
+                  </button>
+                  <Link
+                    href={`/camp?hackathon=${slug}`}
+                    style={{ padding: "0.55rem 1.1rem", borderRadius: 8, background: "var(--accent)", color: "#fff", fontWeight: 700, textDecoration: "none", fontSize: "0.875rem" }}
+                  >
+                    팀 만들기 →
+                  </Link>
+                </div>
+              </div>
+            )}
+          </section>
+
         </main>
       </div>
+
+      {/* 지원하기 유의사항 확인 모달 */}
+      {confirmTarget && (
+        <div
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.65)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "1rem" }}
+          onClick={() => setConfirmTarget(null)}
+        >
+          <div
+            className="card"
+            style={{ width: "100%", maxWidth: 440, padding: "1.75rem" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ fontWeight: 800, fontSize: "1.1rem", marginBottom: "0.25rem", color: "var(--text)" }}>
+              팀 지원 전 확인사항
+            </h3>
+            <p style={{ fontSize: "0.85rem", color: "var(--muted)", marginBottom: "1.25rem" }}>
+              <strong style={{ color: "var(--text)" }}>{confirmTarget.name}</strong> 팀에 지원하기 전 아래 내용을 확인해주세요.
+            </p>
+
+            {detail?.sections.info.notice && detail.sections.info.notice.length > 0 && (
+              <div style={{ background: "var(--surface2)", borderRadius: 8, padding: "1rem", marginBottom: "1rem", border: "1px solid var(--border)" }}>
+                <div style={{ fontWeight: 700, fontSize: "0.8rem", marginBottom: "0.5rem", color: "#f59e0b" }}>📢 대회 유의사항</div>
+                <ul style={{ margin: 0, paddingLeft: "1.25rem", display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+                  {detail.sections.info.notice.map((n, i) => (
+                    <li key={i} style={{ fontSize: "0.82rem", color: "var(--muted)", lineHeight: 1.5 }}>{n}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div style={{ fontSize: "0.8rem", color: "var(--muted)", marginBottom: "1.5rem", padding: "0.75rem", background: "var(--surface2)", borderRadius: 8, borderLeft: "3px solid rgba(124,58,237,0.4)" }}>
+              지원하기를 누르면 팀의 연락처 링크로 이동합니다. 팀과 직접 소통 후 합류 여부를 결정해주세요.
+            </div>
+
+            <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}>
+              <button
+                onClick={() => setConfirmTarget(null)}
+                style={{ padding: "0.55rem 1rem", borderRadius: 8, border: "1px solid var(--border)", background: "transparent", color: "var(--muted)", fontSize: "0.85rem", cursor: "pointer" }}
+              >
+                취소
+              </button>
+              <a
+                href={confirmTarget.contact.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setConfirmTarget(null)}
+                style={{ padding: "0.55rem 1.25rem", borderRadius: 8, background: "var(--accent)", color: "#fff", fontSize: "0.85rem", fontWeight: 700, textDecoration: "none" }}
+              >
+                확인했습니다, 지원하기 →
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

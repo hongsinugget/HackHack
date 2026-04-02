@@ -8,10 +8,18 @@ import type { Team } from "@/lib/types";
 import { toast } from "sonner";
 import StatusBadge from "@/components/StatusBadge";
 
-const ROLE_CATEGORIES: { label: string; roles: string[]; subRoles?: string[] }[] = [
-  { label: "개발자", roles: ["Frontend", "Backend", "ML Engineer"], subRoles: ["Frontend", "Backend", "ML Engineer"] },
+const ROLE_CATEGORIES: { label: string; roles: string[] }[] = [
+  { label: "Data Analyst", roles: ["Data Analyst"] },
+  { label: "ML Engineer", roles: ["ML Engineer"] },
+  { label: "Data Scientist", roles: ["Data Scientist"] },
+  { label: "DevOps Engineer", roles: ["DevOps Engineer"] },
+  { label: "Full Stack Developer", roles: ["Full Stack Developer"] },
+  { label: "AI Researcher", roles: ["AI Researcher"] },
+  { label: "Data Engineer", roles: ["Data Engineer"] },
   { label: "디자이너", roles: ["Designer"] },
   { label: "PM", roles: ["PM"] },
+  { label: "Service 기획자", roles: ["Service 기획자"] },
+  { label: "발표자", roles: ["발표자"] },
 ];
 
 const ROLE_COLORS: Record<string, string> = {
@@ -21,6 +29,14 @@ const ROLE_COLORS: Record<string, string> = {
   "ML Engineer": "#a78bfa",
   PM: "#fbbf24",
   기획자: "#fb923c",
+  "Data Analyst": "#60a5fa",
+  "Data Scientist": "#10b981",
+  "DevOps Engineer": "#f59e0b",
+  "Full Stack Developer": "#818cf8",
+  "AI Researcher": "#e879f9",
+  "Data Engineer": "#22d3ee",
+  "Service 기획자": "#fb923c",
+  발표자: "#facc15",
 };
 
 function TeamCard({
@@ -148,7 +164,7 @@ function CreateTeamModal({
   const [maxMembers, setMaxMembers] = useState(4);
   const [inviteCode, setInviteCode] = useState("");
   const [copied, setCopied] = useState(false);
-  const allRoles = ["Frontend", "Backend", "Designer", "PM", "ML Engineer"];
+  const allRoles = ["Data Analyst", "ML Engineer", "Data Scientist", "DevOps Engineer", "Full Stack Developer", "AI Researcher", "Data Engineer", "Designer", "PM", "Service 기획자", "발표자"];
 
   const toggleRole = (role: string) =>
     setLookingFor((prev) => prev.includes(role) ? prev.filter((r) => r !== role) : [...prev, role]);
@@ -247,13 +263,13 @@ function CreateTeamModal({
 
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
           <div>
-            <label style={{ fontSize: "0.8rem", color: "var(--muted)", display: "block", marginBottom: 6 }}>참가 대회 *</label>
+            <label style={{ fontSize: "0.8rem", color: "var(--muted)", display: "block", marginBottom: 6 }}>참가 대회 <span style={{ color: "var(--muted)", fontWeight: 400 }}>(선택사항)</span></label>
             <select
               value={hackathonSlug}
               onChange={(e) => setHackathonSlug(e.target.value)}
-              style={{ width: "100%", padding: "0.625rem 0.875rem", borderRadius: 8, background: "var(--surface2)", border: "1px solid var(--border)", color: hackathonSlug ? "var(--text)" : "var(--muted)", fontSize: "0.9rem", outline: "none", cursor: "pointer" }}
+              style={{ width: "100%", padding: "0.625rem 0.875rem", borderRadius: 8, background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "0.9rem", outline: "none", cursor: "pointer" }}
             >
-              <option value="" disabled>대회를 선택하세요</option>
+              <option value="">대회 없이 팀 만들기</option>
               {hackathons.map((h) => (
                 <option key={h.slug} value={h.slug}>{h.title}</option>
               ))}
@@ -344,7 +360,6 @@ function CreateTeamModal({
           </button>
           <button
             onClick={() => {
-              if (!hackathonSlug) { toast.error("참가할 대회를 선택해주세요"); return; }
               if (!name.trim()) { toast.error("팀 이름을 입력해주세요"); return; }
               const code = onCreate({ name: name.trim(), intro: intro.trim(), lookingFor, maxMembers, hackathonSlug });
               setInviteCode(code);
@@ -369,18 +384,15 @@ function RandomMatchModal({
   hackathons: { slug: string; title: string; status: string }[];
   defaultHackathon: string | null;
   onClose: () => void;
-  onMatch: (hackathonSlug: string, subRole: string | null, category: string | null) => boolean;
+  onMatch: (hackathonSlug: string, category: string | null) => boolean;
 }) {
   const activeHackathons = hackathons.filter((h) => h.status !== "ended");
   const [hackathonSlug, setHackathonSlug] = useState(defaultHackathon ?? activeHackathons[0]?.slug ?? "");
   const [category, setCategory] = useState<string | null>(null);
-  const [subRole, setSubRole] = useState<string | null>(null);
-
-  const activeCat = ROLE_CATEGORIES.find((c) => c.label === category) ?? null;
 
   const handleMatch = () => {
     if (!hackathonSlug) { toast.error("대회를 선택해주세요"); return; }
-    const ok = onMatch(hackathonSlug, subRole, category);
+    const ok = onMatch(hackathonSlug, category);
     if (ok) onClose();
   };
 
@@ -426,16 +438,12 @@ function RandomMatchModal({
             <label style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--text)", display: "block", marginBottom: "0.5rem" }}>
               내 직군 <span style={{ fontSize: "0.75rem", color: "var(--muted)", fontWeight: 400 }}>(선택)</span>
             </label>
-            {/* 대분류 */}
-            <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", marginBottom: activeCat?.subRoles ? "0.6rem" : 0 }}>
+            <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
               {ROLE_CATEGORIES.map((cat) => (
                 <button
                   key={cat.label}
                   type="button"
-                  onClick={() => {
-                    if (category === cat.label) { setCategory(null); setSubRole(null); }
-                    else { setCategory(cat.label); setSubRole(null); }
-                  }}
+                  onClick={() => setCategory(category === cat.label ? null : cat.label)}
                   style={{
                     padding: "0.375rem 0.875rem",
                     borderRadius: 20,
@@ -448,35 +456,10 @@ function RandomMatchModal({
                     transition: "all 0.15s",
                   }}
                 >
-                  {cat.label}{cat.subRoles ? (category === cat.label ? " ▴" : " ▾") : ""}
+                  {cat.label}
                 </button>
               ))}
             </div>
-            {/* 세부 직군 (개발자만) */}
-            {activeCat?.subRoles && (
-              <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", paddingLeft: "0.5rem", borderLeft: "2px solid rgba(124,58,237,0.3)", marginTop: "0.5rem" }}>
-                {activeCat.subRoles.map((sub) => (
-                  <button
-                    key={sub}
-                    type="button"
-                    onClick={() => setSubRole(subRole === sub ? null : sub)}
-                    style={{
-                      padding: "0.3rem 0.75rem",
-                      borderRadius: 20,
-                      fontSize: "0.78rem",
-                      fontWeight: subRole === sub ? 700 : 400,
-                      background: subRole === sub ? `${ROLE_COLORS[sub] ?? "#7c3aed"}25` : "var(--surface2)",
-                      color: subRole === sub ? (ROLE_COLORS[sub] ?? "#a78bfa") : "var(--muted)",
-                      border: subRole === sub ? `1px solid ${ROLE_COLORS[sub] ?? "#7c3aed"}60` : "1px solid var(--border)",
-                      cursor: "pointer",
-                      transition: "all 0.15s",
-                    }}
-                  >
-                    {sub}
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
         </div>
 
@@ -510,7 +493,6 @@ function CampContent() {
 
   const [selectedHackathon, setSelectedHackathon] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedSubRole, setSelectedSubRole] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showRandomModal, setShowRandomModal] = useState(false);
 
@@ -530,12 +512,11 @@ function CampContent() {
     .filter((t) => t.isOpen)
     .filter((t) => !selectedHackathon || t.hackathonSlug === selectedHackathon)
     .filter((t) => {
-      if (selectedSubRole) return t.lookingFor.includes(selectedSubRole);
       if (activeCategory) return t.lookingFor.some((r) => activeCategory.roles.includes(r));
       return true;
     });
 
-  const handleRandomMatch = (hackathonSlug: string, subRole: string | null, category: string | null) => {
+  const handleRandomMatch = (hackathonSlug: string, category: string | null) => {
     if (isAlreadyInHackathon(hackathonSlug)) {
       toast.error("이미 같은 대회의 팀에 소속되어 있습니다");
       return false;
@@ -544,7 +525,6 @@ function CampContent() {
     const candidates = teams
       .filter((t) => t.isOpen && t.hackathonSlug === hackathonSlug)
       .filter((t) => {
-        if (subRole) return t.lookingFor.includes(subRole);
         if (categoryObj) return t.lookingFor.some((r) => categoryObj.roles.includes(r));
         return true;
       })
@@ -587,6 +567,7 @@ function CampContent() {
       name: data.name,
       isOpen: data.lookingFor.length > 0,
       memberCount: 1,
+      maxMembers: data.maxMembers,
       members: [profile?.nickname ?? ""],
       leader: profile?.nickname ?? "",
       lookingFor: data.lookingFor,
@@ -646,10 +627,10 @@ function CampContent() {
           내 직군 선택
         </div>
 
-        {/* 대분류 */}
-        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: activeCategory?.subRoles ? "0.75rem" : "1.25rem" }}>
+        {/* 직군 필터 */}
+        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "1.25rem" }}>
           <button
-            onClick={() => { setSelectedCategory(null); setSelectedSubRole(null); }}
+            onClick={() => setSelectedCategory(null)}
             style={{
               padding: "0.5rem 1rem",
               borderRadius: 20,
@@ -670,10 +651,8 @@ function CampContent() {
               onClick={() => {
                 if (selectedCategory === cat.label) {
                   setSelectedCategory(null);
-                  setSelectedSubRole(null);
                 } else {
                   setSelectedCategory(cat.label);
-                  setSelectedSubRole(null);
                 }
               }}
               style={{
@@ -688,44 +667,10 @@ function CampContent() {
                 transition: "all 0.15s",
               }}
             >
-              {cat.label}{cat.subRoles ? (selectedCategory === cat.label ? " ▴" : " ▾") : ""}
+              {cat.label}
             </button>
           ))}
         </div>
-
-        {/* 세부 직군 (개발자만) */}
-        {activeCategory?.subRoles && (
-          <div
-            style={{
-              display: "flex",
-              gap: "0.4rem",
-              flexWrap: "wrap",
-              marginBottom: "1.25rem",
-              paddingLeft: "0.5rem",
-              borderLeft: "2px solid rgba(124,58,237,0.3)",
-            }}
-          >
-            {activeCategory.subRoles.map((sub) => (
-              <button
-                key={sub}
-                onClick={() => setSelectedSubRole(selectedSubRole === sub ? null : sub)}
-                style={{
-                  padding: "0.35rem 0.875rem",
-                  borderRadius: 20,
-                  fontSize: "0.8rem",
-                  fontWeight: selectedSubRole === sub ? 700 : 400,
-                  background: selectedSubRole === sub ? `${ROLE_COLORS[sub] ?? "#7c3aed"}25` : "var(--surface2)",
-                  color: selectedSubRole === sub ? (ROLE_COLORS[sub] ?? "#a78bfa") : "var(--muted)",
-                  border: selectedSubRole === sub ? `1px solid ${ROLE_COLORS[sub] ?? "#7c3aed"}60` : "1px solid var(--border)",
-                  cursor: "pointer",
-                  transition: "all 0.15s",
-                }}
-              >
-                {sub}
-              </button>
-            ))}
-          </div>
-        )}
 
         <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
           <button
@@ -767,9 +712,9 @@ function CampContent() {
           모집 중인 팀
           <span style={{ fontSize: "0.8rem", fontWeight: 400, color: "var(--muted)", marginLeft: "0.5rem" }}>{openTeams.length}개</span>
         </div>
-        {(selectedSubRole || selectedCategory) && (
+        {selectedCategory && (
           <div style={{ fontSize: "0.8rem", color: "#a78bfa" }}>
-            <b>{selectedSubRole ?? selectedCategory}</b> 모집 팀만 표시 중
+            <b>{selectedCategory}</b> 모집 팀만 표시 중
           </div>
         )}
       </div>

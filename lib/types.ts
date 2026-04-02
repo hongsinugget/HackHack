@@ -25,6 +25,7 @@ export interface Team {
   name: string;
   isOpen: boolean;
   memberCount: number;
+  maxMembers: number;
   members: string[];
   leader: string;
   lookingFor: string[];
