@@ -46,6 +46,7 @@ function TeamCard({
   onApply,
   applied,
   isMember,
+  isPending,
 }: {
   team: Team;
   hackathonTitle?: string;
@@ -53,6 +54,7 @@ function TeamCard({
   onApply: (teamCode: string) => void;
   applied: boolean;
   isMember: boolean;
+  isPending: boolean;
 }) {
   return (
     <div className="card" style={{ padding: "1.25rem", display: "flex", flexDirection: "column", gap: 0 }}>
@@ -92,22 +94,25 @@ function TeamCard({
       </p>
 
       {team.lookingFor.length > 0 && (
-        <div style={{ display: "flex", gap: "0.375rem", flexWrap: "wrap", marginBottom: "0.875rem" }}>
-          {team.lookingFor.map((role) => (
-            <span
-              key={role}
-              style={{
-                fontSize: "0.7rem",
-                padding: "2px 8px",
-                borderRadius: 6,
-                border: `1px solid ${ROLE_COLORS[role] ?? "#6b6b80"}40`,
-                color: ROLE_COLORS[role] ?? "var(--muted)",
-                background: `${ROLE_COLORS[role] ?? "#6b6b80"}15`,
-              }}
-            >
-              {role}
-            </span>
-          ))}
+        <div style={{ marginBottom: "0.875rem" }}>
+          <span style={{ fontSize: "0.68rem", color: "var(--muted)", marginBottom: "0.375rem", display: "block" }}>🔍 구인중</span>
+          <div style={{ display: "flex", gap: "0.375rem", flexWrap: "wrap" }}>
+            {team.lookingFor.map((role) => (
+              <span
+                key={role}
+                style={{
+                  fontSize: "0.7rem",
+                  padding: "2px 8px",
+                  borderRadius: 6,
+                  border: `1px solid ${ROLE_COLORS[role] ?? "#6b6b80"}40`,
+                  color: ROLE_COLORS[role] ?? "var(--muted)",
+                  background: `${ROLE_COLORS[role] ?? "#6b6b80"}15`,
+                }}
+              >
+                {role}
+              </span>
+            ))}
+          </div>
         </div>
       )}
 
@@ -123,6 +128,10 @@ function TeamCard({
             color: "#10b981",
           }}>
             ✓ 소속된 팀
+          </span>
+        ) : isPending ? (
+          <span style={{ fontSize: "0.75rem", padding: "4px 12px", borderRadius: 6, border: "1px solid rgba(251,191,36,0.35)", background: "rgba(251,191,36,0.1)", color: "#fbbf24" }}>
+            ⏳ 승인 대기중
           </span>
         ) : team.isOpen && (
           <button
@@ -151,10 +160,12 @@ function CreateTeamModal({
   onClose,
   onCreate,
   hackathons,
+  joinedHackathonSlugs,
 }: {
   onClose: () => void;
-  onCreate: (data: { name: string; intro: string; lookingFor: string[]; maxMembers: number; hackathonSlug: string }) => string;
+  onCreate: (data: { name: string; intro: string; lookingFor: string[]; maxMembers: number; hackathonSlug: string; isOpen: boolean; contactUrl: string }) => string;
   hackathons: { slug: string; title: string; status: string }[];
+  joinedHackathonSlugs: Set<string>;
 }) {
   const [step, setStep] = useState<1 | 2>(1);
   const [hackathonSlug, setHackathonSlug] = useState("");
@@ -162,6 +173,7 @@ function CreateTeamModal({
   const [intro, setIntro] = useState("");
   const [lookingFor, setLookingFor] = useState<string[]>([]);
   const [maxMembers, setMaxMembers] = useState(4);
+  const [contactUrl, setContactUrl] = useState("");
   const [inviteCode, setInviteCode] = useState("");
   const [copied, setCopied] = useState(false);
   const allRoles = ["Data Analyst", "ML Engineer", "Data Scientist", "DevOps Engineer", "Full Stack Developer", "AI Researcher", "Data Engineer", "Designer", "PM", "Service 기획자", "발표자"];
@@ -258,9 +270,14 @@ function CreateTeamModal({
       style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: "1rem" }}
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, padding: "2rem", width: "100%", maxWidth: 480 }}>
-        <h2 style={{ fontWeight: 800, fontSize: "1.25rem", marginBottom: "1.5rem" }}>팀 만들기</h2>
+      <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, width: "100%", maxWidth: 480, maxHeight: "90vh", display: "flex", flexDirection: "column" }}>
+        {/* 헤더 고정 */}
+        <div style={{ padding: "1.5rem 2rem 1rem", borderBottom: "1px solid var(--border)", flexShrink: 0 }}>
+          <h2 style={{ fontWeight: 800, fontSize: "1.25rem" }}>팀 만들기</h2>
+        </div>
 
+        {/* 내용 스크롤 영역 */}
+        <div style={{ overflowY: "auto", padding: "1.25rem 2rem", flex: 1 }}>
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
           <div>
             <label style={{ fontSize: "0.8rem", color: "var(--muted)", display: "block", marginBottom: 6 }}>참가 대회 <span style={{ color: "var(--muted)", fontWeight: 400 }}>(선택사항)</span></label>
@@ -271,7 +288,9 @@ function CreateTeamModal({
             >
               <option value="">대회 없이 팀 만들기</option>
               {hackathons.map((h) => (
-                <option key={h.slug} value={h.slug}>{h.title}</option>
+                <option key={h.slug} value={h.slug} disabled={joinedHackathonSlugs.has(h.slug)}>
+                  {h.title}{joinedHackathonSlugs.has(h.slug) ? " (참가중)" : ""}
+                </option>
               ))}
             </select>
           </div>
@@ -349,9 +368,23 @@ function CreateTeamModal({
               ))}
             </div>
           </div>
+
+          <div>
+            <label style={{ fontSize: "0.8rem", color: "var(--muted)", display: "block", marginBottom: 6 }}>
+              연락처 <span style={{ fontWeight: 400 }}>(오픈카톡 링크 등, 선택)</span>
+            </label>
+            <input
+              value={contactUrl}
+              onChange={(e) => setContactUrl(e.target.value)}
+              placeholder="https://open.kakao.com/..."
+              style={{ width: "100%", padding: "0.625rem 0.875rem", borderRadius: 8, background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "0.9rem" }}
+            />
+          </div>
+        </div>
         </div>
 
-        <div style={{ display: "flex", gap: "0.75rem", marginTop: "1.75rem" }}>
+        {/* 푸터 버튼 고정 */}
+        <div style={{ padding: "1rem 2rem 1.5rem", borderTop: "1px solid var(--border)", flexShrink: 0, display: "flex", gap: "0.75rem" }}>
           <button
             onClick={onClose}
             style={{ flex: 1, padding: "0.625rem", borderRadius: 8, background: "transparent", border: "1px solid var(--border)", color: "var(--muted)", cursor: "pointer" }}
@@ -361,13 +394,76 @@ function CreateTeamModal({
           <button
             onClick={() => {
               if (!name.trim()) { toast.error("팀 이름을 입력해주세요"); return; }
-              const code = onCreate({ name: name.trim(), intro: intro.trim(), lookingFor, maxMembers, hackathonSlug });
+              const code = onCreate({ name: name.trim(), intro: intro.trim(), lookingFor, maxMembers, hackathonSlug, isOpen: true, contactUrl: contactUrl.trim() });
               setInviteCode(code);
               setStep(2);
             }}
             style={{ flex: 2, padding: "0.625rem", borderRadius: 8, background: "var(--accent)", color: "#fff", border: "none", fontWeight: 700, cursor: "pointer" }}
           >
             팀 생성하기
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ApplyModal({
+  teamCode,
+  defaultRole,
+  lookingFor,
+  onClose,
+  onConfirm,
+}: {
+  teamCode: string;
+  defaultRole?: string;
+  lookingFor: string[];
+  onClose: () => void;
+  onConfirm: (teamCode: string, role: string) => void;
+}) {
+  const allRoles = ["Data Analyst", "ML Engineer", "Data Scientist", "DevOps Engineer", "Full Stack Developer", "AI Researcher", "Data Engineer", "Designer", "PM", "Service 기획자", "발표자", "Frontend", "Backend"];
+  const [selectedRole, setSelectedRole] = useState(defaultRole ?? "");
+  const displayRoles = lookingFor.length > 0 ? lookingFor : allRoles;
+
+  return (
+    <div
+      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: "1rem" }}
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, padding: "1.75rem", width: "100%", maxWidth: 420 }}>
+        <h3 style={{ fontWeight: 800, fontSize: "1.1rem", marginBottom: "0.375rem" }}>어떤 역할로 참가하시나요?</h3>
+        <p style={{ fontSize: "0.82rem", color: "var(--muted)", marginBottom: "1.25rem" }}>
+          {lookingFor.length > 0 ? "이 팀이 모집 중인 직군이에요" : "전체 직군 중에서 선택하세요"}
+        </p>
+        <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", marginBottom: "1.5rem" }}>
+          {displayRoles.map((role) => (
+            <button
+              key={role}
+              onClick={() => setSelectedRole(role)}
+              style={{
+                padding: "0.375rem 0.75rem", borderRadius: 8, fontSize: "0.8rem", cursor: "pointer", transition: "all 0.15s",
+                background: selectedRole === role ? `${ROLE_COLORS[role] ?? "#6b6b80"}20` : "transparent",
+                color: selectedRole === role ? (ROLE_COLORS[role] ?? "#a78bfa") : "var(--muted)",
+                border: selectedRole === role ? `1px solid ${ROLE_COLORS[role] ?? "#6b6b80"}50` : "1px solid var(--border)",
+                fontWeight: selectedRole === role ? 700 : 400,
+              }}
+            >
+              {role}
+            </button>
+          ))}
+        </div>
+        <div style={{ display: "flex", gap: "0.75rem" }}>
+          <button onClick={onClose} style={{ flex: 1, padding: "0.625rem", borderRadius: 8, background: "transparent", border: "1px solid var(--border)", color: "var(--muted)", cursor: "pointer" }}>
+            취소
+          </button>
+          <button
+            onClick={() => {
+              if (!selectedRole) { toast.error("역할을 선택해주세요"); return; }
+              onConfirm(teamCode, selectedRole);
+            }}
+            style={{ flex: 2, padding: "0.625rem", borderRadius: 8, background: "var(--accent)", color: "#fff", border: "none", fontWeight: 700, cursor: "pointer" }}
+          >
+            지원하기
           </button>
         </div>
       </div>
@@ -488,6 +584,7 @@ function CampContent() {
   const initialized = useStore((s) => s.initialized);
   const profile = useStore((s) => s.profile);
   const joinTeam = useStore((s) => s.joinTeam);
+  const requestJoin = useStore((s) => s.requestJoin);
   const addTeam = useStore((s) => s.addTeam);
   const searchParams = useSearchParams();
 
@@ -495,6 +592,7 @@ function CampContent() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showRandomModal, setShowRandomModal] = useState(false);
+  const [applyTarget, setApplyTarget] = useState<string | null>(null);
 
   const myTeamCodes = new Set(profile?.myTeamCodes ?? []);
 
@@ -510,6 +608,9 @@ function CampContent() {
 
   const openTeams = teams
     .filter((t) => t.isOpen)
+    .filter((t) => !myTeamCodes.has(t.teamCode))
+    .filter((t) => t.leader !== profile?.nickname)
+    .filter((t) => !(t.members ?? []).includes(profile?.nickname ?? ""))
     .filter((t) => !selectedHackathon || t.hackathonSlug === selectedHackathon)
     .filter((t) => {
       if (activeCategory) return t.lookingFor.some((r) => activeCategory.roles.includes(r));
@@ -553,11 +654,20 @@ function CampContent() {
       toast.error("이미 같은 대회의 팀에 소속되어 있습니다");
       return;
     }
-    joinTeam(teamCode);
-    toast.success("지원 완료! 팀장의 수락을 기다려주세요 🤝");
+    setApplyTarget(teamCode);
   };
 
-  const handleCreateTeam = (data: { name: string; intro: string; lookingFor: string[]; maxMembers: number; hackathonSlug: string }): string => {
+  const handleApplyConfirm = (teamCode: string, role: string) => {
+    requestJoin(teamCode, role);
+    setApplyTarget(null);
+    toast.success("지원 요청을 보냈습니다! 팀장의 수락을 기다려주세요 🤝");
+  };
+
+  const handleCreateTeam = (data: { name: string; intro: string; lookingFor: string[]; maxMembers: number; hackathonSlug: string; isOpen: boolean; contactUrl: string }): string => {
+    if (data.hackathonSlug && isAlreadyInHackathon(data.hackathonSlug)) {
+      toast.error("이미 해당 대회의 팀에 소속되어 있습니다");
+      return "";
+    }
     const inviteCode = "INV-" + Math.random().toString(36).slice(2, 7).toUpperCase();
     const inviteUrl = `${window.location.origin}/invite/${inviteCode}`;
     const teamCode = "T-" + Math.random().toString(36).slice(2, 6).toUpperCase();
@@ -565,14 +675,14 @@ function CampContent() {
       teamCode,
       hackathonSlug: data.hackathonSlug,
       name: data.name,
-      isOpen: data.lookingFor.length > 0,
+      isOpen: data.isOpen,
       memberCount: 1,
       maxMembers: data.maxMembers,
       members: [profile?.nickname ?? ""],
       leader: profile?.nickname ?? "",
       lookingFor: data.lookingFor,
       intro: data.intro || "새로 만들어진 팀입니다.",
-      contact: { type: "link", url: inviteUrl },
+      contact: { type: "link", url: data.contactUrl || inviteUrl },
       createdAt: new Date().toISOString(),
     };
     addTeam(newTeam);
@@ -741,6 +851,8 @@ function CampContent() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "1rem" }}>
           {openTeams.map((team) => {
             const h = hackathons.find((h) => h.slug === team.hackathonSlug);
+            const isPending = !myTeamCodes.has(team.teamCode) &&
+              (team.joinRequests ?? []).some((r) => r.nickname === profile?.nickname);
             return (
             <TeamCard
               key={team.teamCode}
@@ -750,6 +862,7 @@ function CampContent() {
               onApply={handleApply}
               applied={myTeamCodes.has(team.teamCode)}
               isMember={myTeamCodes.has(team.teamCode)}
+              isPending={isPending}
             />
             );
           })}
@@ -757,7 +870,14 @@ function CampContent() {
       )}
 
       {showCreateModal && (
-        <CreateTeamModal onClose={() => setShowCreateModal(false)} onCreate={handleCreateTeam} hackathons={hackathons} />
+        <CreateTeamModal
+          onClose={() => setShowCreateModal(false)}
+          onCreate={handleCreateTeam}
+          hackathons={hackathons}
+          joinedHackathonSlugs={new Set(
+            teams.filter((t) => myTeamCodes.has(t.teamCode) && t.hackathonSlug).map((t) => t.hackathonSlug)
+          )}
+        />
       )}
 
       {showRandomModal && (
@@ -766,6 +886,16 @@ function CampContent() {
           defaultHackathon={selectedHackathon}
           onClose={() => setShowRandomModal(false)}
           onMatch={handleRandomMatch}
+        />
+      )}
+
+      {applyTarget && (
+        <ApplyModal
+          teamCode={applyTarget}
+          defaultRole={profile?.role}
+          lookingFor={teams.find((t) => t.teamCode === applyTarget)?.lookingFor ?? []}
+          onClose={() => setApplyTarget(null)}
+          onConfirm={handleApplyConfirm}
         />
       )}
 

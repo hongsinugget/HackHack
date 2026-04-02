@@ -9,6 +9,7 @@ export const seedHackathons: Hackathon[] = [
     thumbnailUrl: "/thumbnails/aimers-8-model-lite.svg",
     period: {
       timezone: "Asia/Seoul",
+      startAt: "2026-02-10T10:00:00+09:00",
       submissionDeadlineAt: "2026-02-25T10:00:00+09:00",
       endAt: "2026-02-26T10:00:00+09:00",
     },
@@ -27,6 +28,7 @@ export const seedHackathons: Hackathon[] = [
     thumbnailUrl: "/thumbnails/monthly-vibe-coding-2026-02.svg",
     period: {
       timezone: "Asia/Seoul",
+      startAt: "2026-03-10T10:00:00+09:00",
       submissionDeadlineAt: "2026-04-03T10:00:00+09:00",
       endAt: "2026-04-09T10:00:00+09:00",
     },
@@ -45,6 +47,7 @@ export const seedHackathons: Hackathon[] = [
     thumbnailUrl: "/thumbnails/daker-handover-2026-03.svg",
     period: {
       timezone: "Asia/Seoul",
+      startAt: "2026-03-15T10:00:00+09:00",
       submissionDeadlineAt: "2026-04-06T10:00:00+09:00",
       endAt: "2026-04-27T10:00:00+09:00",
     },
@@ -63,6 +66,7 @@ export const seedHackathons: Hackathon[] = [
     thumbnailUrl: "/thumbnails/next-ai-sprint-2026.svg",
     period: {
       timezone: "Asia/Seoul",
+      startAt: "2026-05-01T10:00:00+09:00",
       submissionDeadlineAt: "2026-05-15T10:00:00+09:00",
       endAt: "2026-05-20T10:00:00+09:00",
     },

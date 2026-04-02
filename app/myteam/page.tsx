@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
+import { toast } from "sonner";
 
 const ROLE_COLORS: Record<string, string> = {
   Frontend: "#38bdf8",
@@ -26,12 +27,20 @@ export default function MyTeamPage() {
   const teams = useStore((s) => s.teams);
   const hackathons = useStore((s) => s.hackathons);
   const initialized = useStore((s) => s.initialized);
+  const cancelJoinRequest = useStore((s) => s.cancelJoinRequest);
 
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [endedOpen, setEndedOpen] = useState(false);
 
   const myTeamCodes = profile?.myTeamCodes ?? [];
   const myTeams = teams.filter((t) => myTeamCodes.includes(t.teamCode));
+
+  // 승인 대기중인 팀 (joinRequests에 내 닉네임이 있는 팀)
+  const pendingTeams = teams.filter(
+    (t) =>
+      !myTeamCodes.includes(t.teamCode) &&
+      (t.joinRequests ?? []).some((r) => r.nickname === profile?.nickname)
+  );
 
   const activeTeams = myTeams.filter((t) => {
     const hackathon = hackathons.find((h) => h.slug === t.hackathonSlug);
@@ -47,6 +56,11 @@ export default function MyTeamPage() {
       setCopiedCode(teamCode);
       setTimeout(() => setCopiedCode(null), 2000);
     });
+  };
+
+  const handleCancel = (teamCode: string, teamName: string) => {
+    cancelJoinRequest(teamCode);
+    toast.success(`"${teamName}" 지원을 취소했습니다`);
   };
 
   if (!initialized) {
@@ -196,6 +210,95 @@ export default function MyTeamPage() {
     );
   };
 
+  const PendingTeamCard = ({ team }: { team: typeof pendingTeams[0] }) => {
+    const hackathon = hackathons.find((h) => h.slug === team.hackathonSlug);
+    const myRequest = (team.joinRequests ?? []).find((r) => r.nickname === profile?.nickname);
+
+    return (
+      <div
+        className="card"
+        style={{
+          padding: "1.5rem",
+          border: "1px solid rgba(251,191,36,0.25)",
+          background: "rgba(251,191,36,0.03)",
+        }}
+      >
+        {/* 상단: 해커톤 + 대기 배지 */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1rem" }}>
+          <div>
+            {hackathon ? (
+              <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "#a78bfa", marginBottom: "0.25rem" }}>
+                🏆 {hackathon.title}
+              </div>
+            ) : (
+              <div style={{ fontSize: "0.75rem", color: "var(--muted)", marginBottom: "0.25rem" }}>대회 미지정</div>
+            )}
+            <div style={{ fontWeight: 800, fontSize: "1.2rem", marginTop: "0.1rem" }}>{team.name}</div>
+          </div>
+          <span style={{
+            fontSize: "0.7rem", padding: "2px 10px", borderRadius: 9999, whiteSpace: "nowrap",
+            background: "rgba(251,191,36,0.12)", color: "#fbbf24",
+            border: "1px solid rgba(251,191,36,0.35)",
+          }}>
+            ⏳ 승인 대기중
+          </span>
+        </div>
+
+        {/* 팀 소개 */}
+        <p style={{ fontSize: "0.85rem", color: "var(--muted)", marginBottom: "0.875rem", lineHeight: 1.6, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+          {team.intro}
+        </p>
+
+        {/* 지원 직군 + 팀원 수 */}
+        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1rem", flexWrap: "wrap" }}>
+          {myRequest?.role && (
+            <span style={{
+              fontSize: "0.72rem", padding: "3px 10px", borderRadius: 6,
+              border: `1px solid ${ROLE_COLORS[myRequest.role] ?? "#6b6b80"}40`,
+              color: ROLE_COLORS[myRequest.role] ?? "var(--muted)",
+              background: `${ROLE_COLORS[myRequest.role] ?? "#6b6b80"}15`,
+            }}>
+              내 지원 직군: {myRequest.role}
+            </span>
+          )}
+          <span style={{ fontSize: "0.8rem", color: "var(--muted)" }}>
+            팀원 {team.memberCount}명{team.maxMembers ? ` / 최대 ${team.maxMembers}명` : ""}
+          </span>
+        </div>
+
+        {/* 액션 */}
+        <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end", paddingTop: "0.75rem", borderTop: "1px solid rgba(251,191,36,0.15)" }}>
+          {hackathon && (
+            <Link
+              href={`/hackathons/${team.hackathonSlug}`}
+              style={{
+                padding: "0.5rem 1rem", borderRadius: 8,
+                background: "rgba(124,58,237,0.1)", color: "#a78bfa",
+                border: "1px solid rgba(124,58,237,0.25)",
+                fontSize: "0.8rem", fontWeight: 600, textDecoration: "none",
+              }}
+            >
+              대회 보기 →
+            </Link>
+          )}
+          <button
+            onClick={() => handleCancel(team.teamCode, team.name)}
+            style={{
+              padding: "0.5rem 1rem", borderRadius: 8,
+              background: "transparent", color: "var(--muted)",
+              border: "1px solid var(--border)",
+              fontSize: "0.8rem", cursor: "pointer",
+            }}
+          >
+            지원 취소
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  const isEmpty = myTeams.length === 0 && pendingTeams.length === 0;
+
   return (
     <div>
       <div style={{ marginBottom: "1.75rem" }}>
@@ -203,7 +306,7 @@ export default function MyTeamPage() {
         <p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>소속된 팀을 확인하고 관리하세요</p>
       </div>
 
-      {myTeams.length === 0 ? (
+      {isEmpty ? (
         <div style={{ textAlign: "center", padding: "5rem 2rem", background: "var(--surface)", borderRadius: 16, border: "1px solid var(--border)" }}>
           <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>🏕️</div>
           <div style={{ fontWeight: 700, fontSize: "1.1rem", marginBottom: "0.5rem" }}>아직 소속된 팀이 없습니다</div>
@@ -215,52 +318,70 @@ export default function MyTeamPage() {
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
 
-          {/* 진행중 팀 */}
-          {activeTeams.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "2.5rem 1rem", background: "var(--surface)", borderRadius: 14, border: "1px solid var(--border)" }}>
-              <div style={{ fontSize: "1.75rem", marginBottom: "0.5rem" }}>🏁</div>
-              <div style={{ fontSize: "0.9rem", color: "var(--muted)" }}>진행중인 팀이 없습니다</div>
-              <Link href="/camp" style={{ display: "inline-block", marginTop: "1rem", padding: "0.5rem 1.25rem", borderRadius: 8, background: "var(--accent)", color: "#fff", fontWeight: 700, textDecoration: "none", fontSize: "0.875rem" }}>
-                팀 모집 보러가기 →
-              </Link>
-            </div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-              {activeTeams.map((team) => (
-                <TeamCard key={team.teamCode} team={team} isEnded={false} />
-              ))}
+          {/* 승인 대기중 */}
+          {pendingTeams.length > 0 && (
+            <div>
+              <div style={{ fontSize: "0.8rem", fontWeight: 700, color: "#fbbf24", marginBottom: "0.75rem", display: "flex", alignItems: "center", gap: "0.375rem" }}>
+                ⏳ 승인 대기중 <span style={{ fontWeight: 400, color: "var(--muted)" }}>({pendingTeams.length}개)</span>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                {pendingTeams.map((team) => (
+                  <PendingTeamCard key={team.teamCode} team={team} />
+                ))}
+              </div>
             </div>
           )}
 
-          {/* 종료된 팀 — 아코디언 */}
-          {endedTeams.length > 0 && (
-            <div>
-              <button
-                onClick={() => setEndedOpen((v) => !v)}
-                style={{
-                  display: "flex", alignItems: "center", gap: "0.5rem", width: "100%",
-                  padding: "0.75rem 1rem", borderRadius: 10,
-                  background: "transparent", border: "1px solid var(--border)",
-                  color: "var(--muted)", fontSize: "0.875rem", fontWeight: 600,
-                  cursor: "pointer", transition: "background 0.15s",
-                }}
-              >
-                <span style={{ flex: 1, textAlign: "left" }}>
-                  🏁 종료된 팀 <span style={{ fontWeight: 400, fontSize: "0.8rem" }}>({endedTeams.length}개)</span>
-                </span>
-                <span style={{ fontSize: "0.75rem", transition: "transform 0.2s", display: "inline-block", transform: endedOpen ? "rotate(180deg)" : "rotate(0deg)" }}>
-                  ▼
-                </span>
-              </button>
-
-              {endedOpen && (
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.875rem", marginTop: "0.75rem" }}>
-                  {endedTeams.map((team) => (
-                    <TeamCard key={team.teamCode} team={team} isEnded={true} />
+          {/* 진행중 팀 */}
+          {myTeams.length > 0 && (
+            <>
+              {activeTeams.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "2.5rem 1rem", background: "var(--surface)", borderRadius: 14, border: "1px solid var(--border)" }}>
+                  <div style={{ fontSize: "1.75rem", marginBottom: "0.5rem" }}>🏁</div>
+                  <div style={{ fontSize: "0.9rem", color: "var(--muted)" }}>진행중인 팀이 없습니다</div>
+                  <Link href="/camp" style={{ display: "inline-block", marginTop: "1rem", padding: "0.5rem 1.25rem", borderRadius: 8, background: "var(--accent)", color: "#fff", fontWeight: 700, textDecoration: "none", fontSize: "0.875rem" }}>
+                    팀 모집 보러가기 →
+                  </Link>
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                  {activeTeams.map((team) => (
+                    <TeamCard key={team.teamCode} team={team} isEnded={false} />
                   ))}
                 </div>
               )}
-            </div>
+
+              {/* 종료된 팀 — 아코디언 */}
+              {endedTeams.length > 0 && (
+                <div>
+                  <button
+                    onClick={() => setEndedOpen((v) => !v)}
+                    style={{
+                      display: "flex", alignItems: "center", gap: "0.5rem", width: "100%",
+                      padding: "0.75rem 1rem", borderRadius: 10,
+                      background: "transparent", border: "1px solid var(--border)",
+                      color: "var(--muted)", fontSize: "0.875rem", fontWeight: 600,
+                      cursor: "pointer", transition: "background 0.15s",
+                    }}
+                  >
+                    <span style={{ flex: 1, textAlign: "left" }}>
+                      🏁 종료된 팀 <span style={{ fontWeight: 400, fontSize: "0.8rem" }}>({endedTeams.length}개)</span>
+                    </span>
+                    <span style={{ fontSize: "0.75rem", transition: "transform 0.2s", display: "inline-block", transform: endedOpen ? "rotate(180deg)" : "rotate(0deg)" }}>
+                      ▼
+                    </span>
+                  </button>
+
+                  {endedOpen && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.875rem", marginTop: "0.75rem" }}>
+                      {endedTeams.map((team) => (
+                        <TeamCard key={team.teamCode} team={team} isEnded={true} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
           )}
         </div>
       )}

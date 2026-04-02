@@ -606,23 +606,28 @@ export default function HackathonDetailPage({ params }: { params: Promise<{ slug
                         </span>
                       </div>
                       <p style={{ fontSize: "0.85rem", color: "var(--muted)", margin: "0 0 0.6rem", lineHeight: 1.5 }}>{team.intro}</p>
-                      <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
-                        {team.lookingFor.map((role) => (
-                          <span
-                            key={role}
-                            style={{
-                              fontSize: "0.72rem",
-                              padding: "0.15rem 0.5rem",
-                              borderRadius: 4,
-                              background: `${ROLE_COLORS[role] ?? "#6b7280"}22`,
-                              color: ROLE_COLORS[role] ?? "var(--muted)",
-                              fontWeight: 600,
-                            }}
-                          >
-                            {role}
-                          </span>
-                        ))}
-                      </div>
+                      {team.lookingFor.length > 0 && (
+                        <div style={{ marginBottom: "0.6rem" }}>
+                          <span style={{ fontSize: "0.68rem", color: "var(--muted)", display: "block", marginBottom: "0.3rem" }}>🔍 구인중</span>
+                          <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
+                            {team.lookingFor.map((role) => (
+                              <span
+                                key={role}
+                                style={{
+                                  fontSize: "0.72rem",
+                                  padding: "0.15rem 0.5rem",
+                                  borderRadius: 4,
+                                  background: `${ROLE_COLORS[role] ?? "#6b7280"}22`,
+                                  color: ROLE_COLORS[role] ?? "var(--muted)",
+                                  fontWeight: 600,
+                                }}
+                              >
+                                {role}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                     {isMember ? (
                       <Link

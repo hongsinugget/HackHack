@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Hackathon, Team, Leaderboard, LeaderboardEntry, Profile, Badge, TimelineEvent } from "./types";
+import type { Hackathon, Team, Leaderboard, LeaderboardEntry, Profile, Badge, TimelineEvent, JoinRequest } from "./types";
 import { seedHackathons, seedTeams, seedLeaderboards } from "./seed";
 
 const LS_KEYS = {
@@ -37,13 +37,19 @@ interface StoreState {
   toggleBookmark: (slug: string) => void;
   updateLeaderboard: (slug: string, entry: Omit<LeaderboardEntry, "rank">) => void;
   addTimelineEvent: (event: TimelineEvent) => void;
-  joinTeam: (teamCode: string) => void;
+  joinTeam: (teamCode: string, role?: string) => void;
   leaveTeam: (teamCode: string) => void;
   addTeam: (team: Team) => void;
   updateTeam: (teamCode: string, updates: Partial<Team>) => void;
   deleteTeam: (teamCode: string) => void;
   delegateLeader: (teamCode: string, newLeader: string) => void;
   kickMember: (teamCode: string, nickname: string) => void;
+  requestJoin: (teamCode: string, role?: string) => void;
+  approveJoinRequest: (teamCode: string, nickname: string) => void;
+  rejectJoinRequest: (teamCode: string, nickname: string) => void;
+  cancelJoinRequest: (teamCode: string) => void;
+  setMyRole: (role: string) => void;
+  updateProfile: (updates: Partial<Pick<Profile, "nickname" | "avatarEmoji" | "bio" | "role" | "skills" | "links" | "isPublic">>) => void;
 }
 
 export const useStore = create<StoreState>((set, get) => ({
@@ -174,7 +180,7 @@ export const useStore = create<StoreState>((set, get) => ({
     set({ profile: updated });
   },
 
-  joinTeam: (teamCode: string) => {
+  joinTeam: (teamCode: string, role?: string) => {
     const { profile, teams, hackathons } = get();
     if (!profile) return;
     const myTeamCodes = profile.myTeamCodes ?? [];
@@ -187,9 +193,9 @@ export const useStore = create<StoreState>((set, get) => ({
 
     // 배지: 🤝 최강단짝
     const badges = [...profile.badges];
-    if (!badges.some((b) => b.id === "best_partner")) {
+    if (!badges.some((b) => b.id === "duo_buddy")) {
       badges.push({
-        id: "best_partner",
+        id: "duo_buddy",
         emoji: "🤝",
         label: "최강단짝",
         description: "팀에 합류하거나 팀을 만들었습니다",
@@ -232,6 +238,9 @@ export const useStore = create<StoreState>((set, get) => ({
             ...t,
             members: [...(t.members ?? []).filter((m) => m !== profile.nickname), profile.nickname],
             memberCount: (t.members ?? []).includes(profile.nickname) ? t.memberCount : t.memberCount + 1,
+            memberRoles: role
+              ? { ...(t.memberRoles ?? {}), [profile.nickname]: role }
+              : t.memberRoles,
           }
         : t
     );
@@ -245,14 +254,17 @@ export const useStore = create<StoreState>((set, get) => ({
     const team = teams.find((t) => t.teamCode === teamCode);
     const updatedProfile = { ...profile, myTeamCodes: (profile.myTeamCodes ?? []).filter((c) => c !== teamCode) };
     saveProfile(updatedProfile);
-    // 팀장이 나가면 팀 자체를 삭제해 모집 목록에 유령 팀이 남지 않도록 처리
-    const updatedTeams = team?.leader === profile.nickname
+    // 팀장이거나 마지막 멤버면 팀 자체를 삭제해 유령 팀이 남지 않도록 처리
+    const remainingMembers = (team?.members ?? []).filter((m) => m !== profile.nickname);
+    const isLeaderLeaving = team?.leader === profile.nickname;
+    const isLastMember = remainingMembers.length === 0;
+    const updatedTeams = (isLeaderLeaving || isLastMember)
       ? teams.filter((t) => t.teamCode !== teamCode)
       : teams.map((t) =>
           t.teamCode === teamCode
             ? {
                 ...t,
-                members: (t.members ?? []).filter((m) => m !== profile.nickname),
+                members: remainingMembers,
                 memberCount: Math.max(0, t.memberCount - 1),
               }
             : t
@@ -306,5 +318,116 @@ export const useStore = create<StoreState>((set, get) => ({
     );
     localStorage.setItem(LS_KEYS.teams, JSON.stringify(updated));
     set({ teams: updated });
+  },
+
+  requestJoin: (teamCode: string, role?: string) => {
+    const { profile, teams } = get();
+    if (!profile) return;
+    const team = teams.find((t) => t.teamCode === teamCode);
+    if (!team) return;
+    if ((profile.myTeamCodes ?? []).includes(teamCode)) return;
+    if ((team.joinRequests ?? []).some((r) => r.nickname === profile.nickname)) return;
+
+    const newRequest: JoinRequest = {
+      id: Math.random().toString(36).slice(2, 10),
+      nickname: profile.nickname,
+      role,
+      requestedAt: new Date().toISOString(),
+    };
+    const updated = teams.map((t) =>
+      t.teamCode === teamCode
+        ? { ...t, joinRequests: [...(t.joinRequests ?? []), newRequest] }
+        : t
+    );
+    localStorage.setItem(LS_KEYS.teams, JSON.stringify(updated));
+    set({ teams: updated });
+  },
+
+  approveJoinRequest: (teamCode: string, nickname: string) => {
+    const { profile, teams, hackathons } = get();
+    const team = teams.find((t) => t.teamCode === teamCode);
+    if (!team) return;
+
+    // 팀에 멤버 추가 + 요청 제거
+    const request = team.joinRequests?.find((r) => r.nickname === nickname);
+    const updatedTeams = teams.map((t) =>
+      t.teamCode === teamCode
+        ? {
+            ...t,
+            members: [...(t.members ?? []).filter((m) => m !== nickname), nickname],
+            memberCount: (t.members ?? []).includes(nickname) ? t.memberCount : t.memberCount + 1,
+            joinRequests: (t.joinRequests ?? []).filter((r) => r.nickname !== nickname),
+            memberRoles: request?.role
+              ? { ...(t.memberRoles ?? {}), [nickname]: request.role }
+              : t.memberRoles,
+          }
+        : t
+    );
+    localStorage.setItem(LS_KEYS.teams, JSON.stringify(updatedTeams));
+    set({ teams: updatedTeams });
+
+    // 승인된 닉네임이 현재 프로필이면 myTeamCodes + 배지 + 타임라인 업데이트
+    if (profile?.nickname === nickname && !(profile.myTeamCodes ?? []).includes(teamCode)) {
+      const hackathon = hackathons.find((h) => h.slug === team.hackathonSlug);
+      const now = new Date().toISOString();
+      const badges = [...profile.badges];
+      if (!badges.some((b) => b.id === "duo_buddy")) {
+        badges.push({ id: "duo_buddy", emoji: "🤝", label: "최강단짝", description: "팀에 합류하거나 팀을 만들었습니다", earnedAt: now });
+      }
+      const newEvent: TimelineEvent = {
+        type: "join",
+        hackathonSlug: team.hackathonSlug ?? "",
+        hackathonTitle: hackathon?.title ?? "",
+        at: now,
+        detail: `팀 합류: ${team.name}`,
+      };
+      const timeline = [...profile.timeline, newEvent];
+      const joinedSlugs = new Set(timeline.filter((e) => e.type === "join" && e.hackathonSlug !== "").map((e) => e.hackathonSlug));
+      if (joinedSlugs.size >= 2 && !badges.some((b) => b.id === "regular")) {
+        badges.push({ id: "regular", emoji: "🔁", label: "단골손님", description: "2개 이상의 해커톤에 참가했습니다", earnedAt: now });
+      }
+      const updatedProfile = { ...profile, myTeamCodes: [...(profile.myTeamCodes ?? []), teamCode], badges, timeline };
+      saveProfile(updatedProfile);
+      set({ profile: updatedProfile });
+    }
+  },
+
+  rejectJoinRequest: (teamCode: string, nickname: string) => {
+    const { teams } = get();
+    const updated = teams.map((t) =>
+      t.teamCode === teamCode
+        ? { ...t, joinRequests: (t.joinRequests ?? []).filter((r) => r.nickname !== nickname) }
+        : t
+    );
+    localStorage.setItem(LS_KEYS.teams, JSON.stringify(updated));
+    set({ teams: updated });
+  },
+
+  cancelJoinRequest: (teamCode: string) => {
+    const { profile, teams } = get();
+    if (!profile) return;
+    const updated = teams.map((t) =>
+      t.teamCode === teamCode
+        ? { ...t, joinRequests: (t.joinRequests ?? []).filter((r) => r.nickname !== profile.nickname) }
+        : t
+    );
+    localStorage.setItem(LS_KEYS.teams, JSON.stringify(updated));
+    set({ teams: updated });
+  },
+
+  setMyRole: (role: string) => {
+    const { profile } = get();
+    if (!profile) return;
+    const updated = { ...profile, role };
+    saveProfile(updated);
+    set({ profile: updated });
+  },
+
+  updateProfile: (updates) => {
+    const { profile } = get();
+    if (!profile) return;
+    const updated = { ...profile, ...updates };
+    saveProfile(updated);
+    set({ profile: updated });
   },
 }));

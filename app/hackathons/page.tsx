@@ -86,14 +86,9 @@ function HackathonCard({ h }: { h: Hackathon }) {
           ) : (
             <div style={{ fontSize: "0.8rem", color: "var(--muted)" }}>상금 미정</div>
           )}
-          <div
-            style={{
-              fontSize: "0.75rem",
-              color: "var(--muted)",
-              textAlign: "right",
-            }}
-          >
-            마감 {new Date(h.period.submissionDeadlineAt).toLocaleDateString("ko-KR")}
+          <div style={{ fontSize: "0.75rem", color: "var(--muted)", textAlign: "right", lineHeight: 1.6 }}>
+            <div>시작 {new Date(h.period.startAt).toLocaleDateString("ko-KR")}</div>
+            <div>마감 {new Date(h.period.submissionDeadlineAt).toLocaleDateString("ko-KR")}</div>
           </div>
         </div>
       </div>

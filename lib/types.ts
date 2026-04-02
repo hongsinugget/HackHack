@@ -8,6 +8,7 @@ export interface Hackathon {
   thumbnailUrl: string;
   period: {
     timezone: string;
+    startAt: string;
     submissionDeadlineAt: string;
     endAt: string;
   };
@@ -17,6 +18,13 @@ export interface Hackathon {
     faq: string;
   };
   maxPrizeKRW?: number;
+}
+
+export interface JoinRequest {
+  id: string;
+  nickname: string;
+  role?: string;
+  requestedAt: string;
 }
 
 export interface Team {
@@ -35,6 +43,8 @@ export interface Team {
     url: string;
   };
   createdAt: string;
+  joinRequests?: JoinRequest[];
+  memberRoles?: Record<string, string>;
 }
 
 export interface LeaderboardEntry {
@@ -75,8 +85,20 @@ export interface TimelineEvent {
   detail?: string;
 }
 
+export interface ProfileLinks {
+  github?: string;
+  portfolio?: string;
+  linkedin?: string;
+}
+
 export interface Profile {
   nickname: string;
+  avatarEmoji?: string;
+  bio?: string;
+  role?: string;
+  skills?: string[];
+  links?: ProfileLinks;
+  isPublic?: boolean;
   badges: Badge[];
   bookmarks: string[];
   timeline: TimelineEvent[];

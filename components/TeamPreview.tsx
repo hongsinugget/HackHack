@@ -16,7 +16,6 @@ function TeamCard({ team }: { team: Team }) {
     <div className="card" style={{ padding: "1.25rem" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.625rem" }}>
         <div>
-          <div style={{ fontSize: "0.65rem", color: "var(--muted)", marginBottom: 2 }}>{team.teamCode}</div>
           <div style={{ fontWeight: 700, fontSize: "1rem", color: "var(--text)" }}>{team.name}</div>
         </div>
         <span
@@ -48,22 +47,25 @@ function TeamCard({ team }: { team: Team }) {
         {team.intro}
       </p>
 
-      <div style={{ display: "flex", gap: "0.375rem", flexWrap: "wrap", marginBottom: "0.75rem" }}>
-        {team.lookingFor.map((role) => (
-          <span
-            key={role}
-            style={{
-              fontSize: "0.7rem",
-              padding: "2px 8px",
-              borderRadius: 6,
-              border: `1px solid ${ROLE_COLORS[role] ?? "#6b6b80"}40`,
-              color: ROLE_COLORS[role] ?? "var(--muted)",
-              background: `${ROLE_COLORS[role] ?? "#6b6b80"}15`,
-            }}
-          >
-            {role}
-          </span>
-        ))}
+      <div style={{ marginBottom: "0.75rem" }}>
+        <span style={{ fontSize: "0.68rem", color: "var(--muted)", display: "block", marginBottom: "0.375rem" }}>🔍 구인중</span>
+        <div style={{ display: "flex", gap: "0.375rem", flexWrap: "wrap" }}>
+          {team.lookingFor.map((role) => (
+            <span
+              key={role}
+              style={{
+                fontSize: "0.7rem",
+                padding: "2px 8px",
+                borderRadius: 6,
+                border: `1px solid ${ROLE_COLORS[role] ?? "#6b6b80"}40`,
+                color: ROLE_COLORS[role] ?? "var(--muted)",
+                background: `${ROLE_COLORS[role] ?? "#6b6b80"}15`,
+              }}
+            >
+              {role}
+            </span>
+          ))}
+        </div>
       </div>
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>

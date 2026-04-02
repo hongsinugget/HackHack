@@ -31,7 +31,7 @@ const ALL_ROLES = [
 ];
 
 type Notice = { id: string; text: string; createdAt: string };
-type TeamSubmission = { projectName: string; githubUrl: string; demoUrl: string; fileName?: string; submittedAt: string; teamName: string };
+type TeamSubmission = { projectName: string; githubUrl: string; demoUrl: string; notes?: string; fileName?: string; submittedAt: string; teamName: string };
 
 export default function SpacePage({ params }: { params: Promise<{ teamCode: string }> }) {
   const { teamCode } = use(params);
@@ -45,6 +45,8 @@ export default function SpacePage({ params }: { params: Promise<{ teamCode: stri
   const deleteTeam = useStore((s) => s.deleteTeam);
   const delegateLeader = useStore((s) => s.delegateLeader);
   const kickMember = useStore((s) => s.kickMember);
+  const approveJoinRequest = useStore((s) => s.approveJoinRequest);
+  const rejectJoinRequest = useStore((s) => s.rejectJoinRequest);
   const leaderboards = useStore((s) => s.leaderboards);
   const updateLeaderboard = useStore((s) => s.updateLeaderboard);
   const addTimelineEvent = useStore((s) => s.addTimelineEvent);
@@ -130,6 +132,7 @@ export default function SpacePage({ params }: { params: Promise<{ teamCode: stri
   const [githubUrl, setGithubUrl] = useState("");
   const [demoUrl, setDemoUrl] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [notes, setNotes] = useState("");
   const [subErrors, setSubErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -157,6 +160,7 @@ export default function SpacePage({ params }: { params: Promise<{ teamCode: stri
       projectName: projectName.trim(),
       githubUrl,
       demoUrl,
+      notes: notes.trim() || undefined,
       fileName: selectedFile?.name,
       submittedAt: new Date().toISOString(),
       teamName: team!.name,
@@ -288,7 +292,7 @@ export default function SpacePage({ params }: { params: Promise<{ teamCode: stri
     { id: "notices", label: "공지", icon: "📌", badge: notices.length > 0 ? notices.length : null },
     { id: "members", label: "팀원", icon: "👥" },
     ...(team.hackathonSlug ? [{ id: "submit", label: "제출", icon: "📤", badge: submission ? "✓" : null }] : []),
-    { id: "settings", label: "설정", icon: "⚙️" },
+    { id: "settings", label: "설정", icon: "⚙️", badge: isLeader && (team.joinRequests ?? []).length > 0 ? (team.joinRequests ?? []).length : null },
   ] as { id: string; label: string; icon: string; badge?: string | number | null }[];
 
   return (
@@ -400,23 +404,9 @@ export default function SpacePage({ params }: { params: Promise<{ teamCode: stri
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
           <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14, padding: "1.25rem" }}>
             <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--muted)", marginBottom: "0.75rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>팀 소개</div>
-            <p style={{ fontSize: "0.9rem", color: "var(--text)", lineHeight: 1.7, marginBottom: team.lookingFor.length > 0 ? "0.875rem" : "0.5rem" }}>
+            <p style={{ fontSize: "0.9rem", color: "var(--text)", lineHeight: 1.7, marginBottom: "0.5rem" }}>
               {team.intro}
             </p>
-            {team.lookingFor.length > 0 && (
-              <div style={{ display: "flex", gap: "0.375rem", flexWrap: "wrap", marginBottom: "0.75rem" }}>
-                {team.lookingFor.map((role) => (
-                  <span key={role} style={{
-                    fontSize: "0.75rem", padding: "3px 10px", borderRadius: 6,
-                    border: `1px solid ${ROLE_COLORS[role] ?? "#6b6b80"}40`,
-                    color: ROLE_COLORS[role] ?? "var(--muted)",
-                    background: `${ROLE_COLORS[role] ?? "#6b6b80"}15`,
-                  }}>
-                    {role}
-                  </span>
-                ))}
-              </div>
-            )}
             <div style={{ fontSize: "0.8rem", color: "var(--muted)" }}>팀원 {team.memberCount}명</div>
           </div>
 
@@ -476,7 +466,17 @@ export default function SpacePage({ params }: { params: Promise<{ teamCode: stri
                     {isThisLeader ? "👑" : "👤"}
                   </div>
                   <span style={{ flex: 1, fontSize: "0.875rem", fontWeight: isMe ? 700 : 400 }}>{nickname}</span>
-                  <div style={{ display: "flex", gap: "0.375rem" }}>
+                  <div style={{ display: "flex", gap: "0.375rem", alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
+                    {(team.memberRoles ?? {})[nickname] && (
+                      <span style={{
+                        fontSize: "0.68rem", padding: "2px 7px", borderRadius: 9999,
+                        background: `${ROLE_COLORS[(team.memberRoles ?? {})[nickname]] ?? "#6b6b80"}20`,
+                        color: ROLE_COLORS[(team.memberRoles ?? {})[nickname]] ?? "var(--muted)",
+                        border: `1px solid ${ROLE_COLORS[(team.memberRoles ?? {})[nickname]] ?? "#6b6b80"}40`,
+                      }}>
+                        {(team.memberRoles ?? {})[nickname]}
+                      </span>
+                    )}
                     {isThisLeader && (
                       <span style={{ fontSize: "0.68rem", padding: "2px 7px", borderRadius: 9999, background: "rgba(251,191,36,0.15)", color: "#fbbf24", border: "1px solid rgba(251,191,36,0.3)" }}>팀장</span>
                     )}
@@ -575,6 +575,7 @@ export default function SpacePage({ params }: { params: Promise<{ teamCode: stri
                 <div style={{ fontSize: "1rem", fontWeight: 700, color: "var(--text)", marginBottom: "0.25rem" }}>{submission.projectName}</div>
                 <a href={submission.githubUrl} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem", color: "#a78bfa", textDecoration: "none" }}>🔗 GitHub</a>
                 <a href={submission.demoUrl} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem", color: "#a78bfa", textDecoration: "none" }}>🌐 시연 링크</a>
+                {submission.notes && <div style={{ fontSize: "0.85rem", color: "var(--muted)", padding: "0.625rem 0.875rem", background: "var(--surface2)", borderRadius: 8, border: "1px solid var(--border)", lineHeight: 1.6 }}>{submission.notes}</div>}
                 {submission.fileName && <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem", color: "var(--muted)" }}>📄 {submission.fileName}</div>}
               </div>
             </div>
@@ -618,6 +619,18 @@ export default function SpacePage({ params }: { params: Promise<{ teamCode: stri
               </div>
               <div>
                 <label style={{ fontSize: "0.8rem", color: "var(--muted)", display: "block", marginBottom: 5 }}>
+                  메모 <span style={{ fontSize: "0.75rem", fontWeight: 400 }}>(선택)</span>
+                </label>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="심사위원이나 팀원에게 전달할 메모를 남겨주세요"
+                  rows={3}
+                  style={{ width: "100%", padding: "0.625rem 0.875rem", borderRadius: 8, background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "0.875rem", resize: "vertical", outline: "none" }}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: "0.8rem", color: "var(--muted)", display: "block", marginBottom: 5 }}>
                   서비스 소개서 <span style={{ fontSize: "0.75rem", fontWeight: 400 }}>(PDF/PPTX, 선택)</span>
                 </label>
                 <label style={{ display: "flex", alignItems: "center", gap: "0.625rem", padding: "0.625rem 0.875rem", borderRadius: 8, cursor: "pointer", background: "var(--surface2)", border: "1px solid var(--border)" }}>
@@ -645,6 +658,39 @@ export default function SpacePage({ params }: { params: Promise<{ teamCode: stri
       {/* 설정 탭 — 팀장 */}
       {activeTab === "settings" && isLeader && (
         <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+
+          {/* 가입 요청 */}
+          {(team.joinRequests ?? []).length > 0 && (
+            <section style={{ background: "var(--surface)", border: "1px solid rgba(251,191,36,0.3)", borderRadius: 14, padding: "1.25rem" }}>
+              <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "#fbbf24", marginBottom: "0.875rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                가입 요청 {(team.joinRequests ?? []).length}건
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
+                {(team.joinRequests ?? []).map((req) => (
+                  <div key={req.id} style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.75rem 1rem", borderRadius: 10, background: "var(--surface2)", border: "1px solid var(--border)" }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 700, fontSize: "0.9rem" }}>{req.nickname}</div>
+                      <div style={{ fontSize: "0.72rem", color: "var(--muted)", marginTop: 2 }}>
+                        {new Date(req.requestedAt).toLocaleString("ko-KR", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => { approveJoinRequest(teamCode, req.nickname); toast.success(`${req.nickname}님을 팀원으로 승인했습니다 ✅`); }}
+                      style={{ padding: "0.4rem 0.875rem", borderRadius: 8, fontSize: "0.8rem", fontWeight: 700, background: "rgba(16,185,129,0.15)", color: "#10b981", border: "1px solid rgba(16,185,129,0.3)", cursor: "pointer" }}
+                    >
+                      승인
+                    </button>
+                    <button
+                      onClick={() => { rejectJoinRequest(teamCode, req.nickname); toast.success(`${req.nickname}님의 요청을 거절했습니다`); }}
+                      style={{ padding: "0.4rem 0.875rem", borderRadius: 8, fontSize: "0.8rem", fontWeight: 600, background: "transparent", color: "var(--muted)", border: "1px solid var(--border)", cursor: "pointer" }}
+                    >
+                      거절
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* 팀 소개 */}
           <section style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14, padding: "1.25rem" }}>
