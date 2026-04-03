@@ -1,11 +1,17 @@
+"use client";
+
 import Link from "next/link";
 import type { Hackathon } from "@/lib/types";
 import { formatPrize, dDayLabel, isRushMode } from "@/lib/utils";
 import StatusBadge from "./StatusBadge";
+import { useStore } from "@/lib/store";
 
 function HackathonCard({ h }: { h: Hackathon }) {
   const rush = isRushMode(h.period.submissionDeadlineAt);
   const dday = dDayLabel(h.period.submissionDeadlineAt);
+  const profile = useStore((s) => s.profile);
+  const toggleBookmark = useStore((s) => s.toggleBookmark);
+  const isBookmarked = profile?.bookmarks.includes(h.slug) ?? false;
 
   return (
     <Link href={h.links.detail} style={{ textDecoration: "none" }}>
@@ -15,17 +21,42 @@ function HackathonCard({ h }: { h: Hackathon }) {
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.75rem" }}>
           <StatusBadge status={h.status} />
-          {(h.status === "ongoing" || h.status === "upcoming") && (
-            <span
-              style={{
-                fontSize: "0.8rem",
-                fontWeight: 700,
-                color: rush ? "#ef4444" : "var(--muted)",
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            {(h.status === "ongoing" || h.status === "upcoming") && (
+              <span
+                style={{
+                  fontSize: "0.8rem",
+                  fontWeight: 700,
+                  color: rush ? "#ef4444" : "var(--muted)",
+                }}
+              >
+                {dday}
+              </span>
+            )}
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleBookmark(h.slug);
               }}
+              title={isBookmarked ? "북마크 해제" : "북마크"}
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: "2px 4px",
+                fontSize: "1rem",
+                lineHeight: 1,
+                color: isBookmarked ? "#a78bfa" : "var(--muted)",
+                opacity: isBookmarked ? 1 : 0.45,
+                transition: "opacity 0.15s, color 0.15s",
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = isBookmarked ? "1" : "0.45"; }}
             >
-              {dday}
-            </span>
-          )}
+              {isBookmarked ? "★" : "☆"}
+            </button>
+          </div>
         </div>
 
         <h3

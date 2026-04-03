@@ -4,6 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { toast } from "sonner";
+import { formatPrize, dDayLabel, isRushMode } from "@/lib/utils";
+import StatusBadge from "@/components/StatusBadge";
 
 const ROLE_COLORS: Record<string, string> = {
   Frontend: "#38bdf8",
@@ -28,12 +30,16 @@ export default function MyTeamPage() {
   const hackathons = useStore((s) => s.hackathons);
   const initialized = useStore((s) => s.initialized);
   const cancelJoinRequest = useStore((s) => s.cancelJoinRequest);
+  const toggleBookmark = useStore((s) => s.toggleBookmark);
 
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [endedOpen, setEndedOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<"teams" | "bookmarks">("teams");
 
   const myTeamCodes = profile?.myTeamCodes ?? [];
   const myTeams = teams.filter((t) => myTeamCodes.includes(t.teamCode));
+  const bookmarkedSlugs = profile?.bookmarks ?? [];
+  const bookmarkedHackathons = hackathons.filter((h) => bookmarkedSlugs.includes(h.slug));
 
   // 승인 대기중인 팀 (joinRequests에 내 닉네임이 있는 팀)
   const pendingTeams = teams.filter(
@@ -301,12 +307,124 @@ export default function MyTeamPage() {
 
   return (
     <div>
-      <div style={{ marginBottom: "1.75rem" }}>
+      {/* 헤더 */}
+      <div style={{ marginBottom: "1.25rem" }}>
         <h1 style={{ fontSize: "1.75rem", fontWeight: 800, marginBottom: "0.375rem" }}>내 팀</h1>
         <p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>소속된 팀을 확인하고 관리하세요</p>
       </div>
 
-      {isEmpty ? (
+      {/* 탭바 */}
+      <div style={{ display: "flex", gap: "0", marginBottom: "1.75rem", borderBottom: "1px solid var(--border)" }}>
+        {(["teams", "bookmarks"] as const).map((tab) => {
+          const label = tab === "teams" ? "내 팀" : "북마크";
+          const count = tab === "teams" ? myTeams.length + pendingTeams.length : bookmarkedHackathons.length;
+          const isActive = activeTab === tab;
+          return (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              style={{
+                padding: "0.625rem 1.25rem",
+                fontSize: "0.9rem",
+                fontWeight: isActive ? 700 : 400,
+                color: isActive ? "#a78bfa" : "var(--muted)",
+                background: "none",
+                border: "none",
+                borderBottom: isActive ? "2px solid #a78bfa" : "2px solid transparent",
+                cursor: "pointer",
+                transition: "all 0.15s",
+                marginBottom: "-1px",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.375rem",
+              }}
+            >
+              {label}
+              {count > 0 && (
+                <span style={{
+                  fontSize: "0.7rem", fontWeight: 700,
+                  padding: "1px 6px", borderRadius: 9999,
+                  background: isActive ? "rgba(167,139,250,0.2)" : "rgba(107,107,128,0.12)",
+                  color: isActive ? "#a78bfa" : "var(--muted)",
+                }}>
+                  {count}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* 북마크 탭 */}
+      {activeTab === "bookmarks" && (
+        bookmarkedHackathons.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "5rem 2rem", background: "var(--surface)", borderRadius: 16, border: "1px solid var(--border)" }}>
+            <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>☆</div>
+            <div style={{ fontWeight: 700, fontSize: "1.1rem", marginBottom: "0.5rem" }}>북마크한 해커톤이 없습니다</div>
+            <div style={{ fontSize: "0.875rem", color: "var(--muted)", marginBottom: "1.5rem" }}>해커톤 목록에서 ☆ 버튼으로 저장하세요</div>
+            <Link href="/hackathons" style={{ display: "inline-block", padding: "0.625rem 1.5rem", borderRadius: 8, background: "var(--accent)", color: "#fff", fontWeight: 700, textDecoration: "none", fontSize: "0.9rem" }}>
+              해커톤 보러가기 →
+            </Link>
+          </div>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "1rem" }}>
+            {bookmarkedHackathons.map((h) => {
+              const rush = isRushMode(h.period.submissionDeadlineAt);
+              const dday = dDayLabel(h.period.submissionDeadlineAt);
+              return (
+                <div key={h.slug} style={{ position: "relative" }}>
+                  <Link href={h.links.detail} style={{ textDecoration: "none" }}>
+                    <div className="card" style={{ padding: "1.5rem", cursor: "pointer", display: "flex", flexDirection: "column", gap: "0.75rem", height: "100%" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                        <StatusBadge status={h.status} />
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                          {h.status !== "ended" && (
+                            <span style={{ fontSize: "0.8rem", fontWeight: 700, color: rush ? "#ef4444" : "var(--muted)" }}>
+                              {rush ? `🔥 ${dday}` : dday}
+                            </span>
+                          )}
+                          <button
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleBookmark(h.slug); }}
+                            title="북마크 해제"
+                            style={{ background: "none", border: "none", cursor: "pointer", padding: "2px 4px", fontSize: "1rem", lineHeight: 1, color: "#a78bfa", transition: "opacity 0.15s" }}
+                          >
+                            ★
+                          </button>
+                        </div>
+                      </div>
+                      <div>
+                        <h3 style={{ fontSize: "1rem", fontWeight: 700, color: "var(--text)", lineHeight: 1.4, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", marginBottom: "0.5rem" }}>
+                          {h.title}
+                        </h3>
+                        <div style={{ display: "flex", gap: "0.375rem", flexWrap: "wrap" }}>
+                          {h.tags.map((tag) => <span key={tag} className="tag">{tag}</span>)}
+                        </div>
+                      </div>
+                      <div style={{ marginTop: "auto", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+                        {h.maxPrizeKRW ? (
+                          <div>
+                            <div style={{ fontSize: "0.65rem", color: "var(--muted)", marginBottom: 2 }}>최대 상금</div>
+                            <div style={{ fontSize: "1.25rem", fontWeight: 800, color: "#a78bfa" }}>{formatPrize(h.maxPrizeKRW)}</div>
+                          </div>
+                        ) : (
+                          <div style={{ fontSize: "0.8rem", color: "var(--muted)" }}>상금 미정</div>
+                        )}
+                        <div style={{ fontSize: "0.75rem", color: "var(--muted)", textAlign: "right", lineHeight: 1.6 }}>
+                          <div>시작 {new Date(h.period.startAt).toLocaleDateString("ko-KR")}</div>
+                          <div>마감 {new Date(h.period.submissionDeadlineAt).toLocaleDateString("ko-KR")}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                </div>
+              );
+            })}
+          </div>
+        )
+      )}
+
+      {/* 내 팀 탭 */}
+      {activeTab === "teams" && (isEmpty ? (
         <div style={{ textAlign: "center", padding: "5rem 2rem", background: "var(--surface)", borderRadius: 16, border: "1px solid var(--border)" }}>
           <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>🏕️</div>
           <div style={{ fontWeight: 700, fontSize: "1.1rem", marginBottom: "0.5rem" }}>아직 소속된 팀이 없습니다</div>
@@ -384,7 +502,7 @@ export default function MyTeamPage() {
             </>
           )}
         </div>
-      )}
+      ))}
     </div>
   );
 }
