@@ -4,15 +4,7 @@ import { use, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { toast } from "sonner";
-
-const ROLE_COLORS: Record<string, string> = {
-  Frontend: "#38bdf8",
-  Backend: "#34d399",
-  Designer: "#f472b6",
-  "ML Engineer": "#a78bfa",
-  PM: "#fbbf24",
-  기획자: "#fb923c",
-};
+import { ROLE_COLORS } from "@/lib/constants";
 
 export default function InvitePage({ params }: { params: Promise<{ code: string }> }) {
   const { code } = use(params);

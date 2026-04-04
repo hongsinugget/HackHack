@@ -1,0 +1,32 @@
+export const ROLE_COLORS: Record<string, string> = {
+  Frontend: "#38bdf8",
+  Backend: "#34d399",
+  Designer: "#f472b6",
+  "ML Engineer": "#a78bfa",
+  PM: "#fbbf24",
+  기획자: "#fb923c",
+  "Data Analyst": "#60a5fa",
+  "Data Scientist": "#10b981",
+  "DevOps Engineer": "#f59e0b",
+  "Full Stack Developer": "#818cf8",
+  "AI Researcher": "#e879f9",
+  "Data Engineer": "#22d3ee",
+  "Service 기획자": "#fb923c",
+  발표자: "#facc15",
+};
+
+export const ALL_ROLES = [
+  "Data Analyst",
+  "ML Engineer",
+  "Data Scientist",
+  "DevOps Engineer",
+  "Full Stack Developer",
+  "AI Researcher",
+  "Data Engineer",
+  "Designer",
+  "PM",
+  "Service 기획자",
+  "발표자",
+  "Frontend",
+  "Backend",
+];

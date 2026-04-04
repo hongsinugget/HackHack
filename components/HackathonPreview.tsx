@@ -1,17 +1,17 @@
 "use client";
 
+import { memo } from "react";
 import Link from "next/link";
 import type { Hackathon } from "@/lib/types";
 import { formatPrize, dDayLabel, isRushMode } from "@/lib/utils";
 import StatusBadge from "./StatusBadge";
 import { useStore } from "@/lib/store";
 
-function HackathonCard({ h }: { h: Hackathon }) {
+const HackathonCard = memo(function HackathonCard({ h }: { h: Hackathon }) {
   const rush = isRushMode(h.period.submissionDeadlineAt);
   const dday = dDayLabel(h.period.submissionDeadlineAt);
-  const profile = useStore((s) => s.profile);
+  const isBookmarked = useStore((s) => s.profile?.bookmarks.includes(h.slug) ?? false);
   const toggleBookmark = useStore((s) => s.toggleBookmark);
-  const isBookmarked = profile?.bookmarks.includes(h.slug) ?? false;
 
   return (
     <Link href={h.links.detail} style={{ textDecoration: "none" }}>
@@ -96,7 +96,7 @@ function HackathonCard({ h }: { h: Hackathon }) {
       </div>
     </Link>
   );
-}
+});
 
 export default function HackathonPreview({ hackathons }: { hackathons: Hackathon[] }) {
   const sorted = [...hackathons]

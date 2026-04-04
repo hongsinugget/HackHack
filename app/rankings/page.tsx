@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
 import type { Leaderboard, LeaderboardEntry, Team } from "@/lib/types";
 
@@ -218,7 +218,10 @@ export default function RankingsPage() {
     return currentBoard.entries.filter((e) => new Date(e.submittedAt) >= cutoff);
   })();
 
-  const userEntries = computeUserRanking(leaderboards, teams, period);
+  const userEntries = useMemo(
+    () => computeUserRanking(leaderboards, teams, period),
+    [leaderboards, teams, period]
+  );
 
   const getTitle = (slug: string) =>
     hackathons.find((h) => h.slug === slug)?.title ?? slug;

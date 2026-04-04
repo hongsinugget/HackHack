@@ -1,6 +1,8 @@
 import { create } from "zustand";
+import type { ZodType } from "zod";
 import type { Hackathon, Team, Leaderboard, LeaderboardEntry, Profile, Badge, TimelineEvent, JoinRequest } from "./types";
 import { seedHackathons, seedTeams, seedLeaderboards } from "./seed";
+import { HackathonsSchema, TeamsSchema, LeaderboardsSchema, ProfileSchema } from "./schemas";
 
 const LS_KEYS = {
   hackathons: "hh_hackathons",
@@ -9,11 +11,19 @@ const LS_KEYS = {
   profile: "hh_profile",
 };
 
-function loadOrSeed<T>(key: string, fallback: T[]): T[] {
+function loadOrSeed<T>(key: string, fallback: T[], schema: ZodType<T[]>): T[] {
   try {
     const raw = localStorage.getItem(key);
-    if (raw) return JSON.parse(raw) as T[];
-  } catch {}
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      const result = schema.safeParse(parsed);
+      if (result.success) return result.data;
+      console.error(`[store] localStorage "${key}" 스키마 불일치, 시드 데이터로 복구합니다:`, result.error.issues);
+      localStorage.removeItem(key);
+    }
+  } catch (e) {
+    console.error(`[store] localStorage "${key}" 로드 실패:`, e);
+  }
   localStorage.setItem(key, JSON.stringify(fallback));
   return fallback;
 }
@@ -63,15 +73,26 @@ export const useStore = create<StoreState>((set, get) => ({
 
   init: () => {
     try {
-      const hackathons = loadOrSeed<Hackathon>(LS_KEYS.hackathons, seedHackathons);
-      const teams = loadOrSeed<Team>(LS_KEYS.teams, seedTeams);
-      const leaderboards = loadOrSeed<Leaderboard>(LS_KEYS.leaderboards, seedLeaderboards);
+      const hackathons = loadOrSeed<Hackathon>(LS_KEYS.hackathons, seedHackathons, HackathonsSchema);
+      const teams = loadOrSeed<Team>(LS_KEYS.teams, seedTeams, TeamsSchema);
+      const leaderboards = loadOrSeed<Leaderboard>(LS_KEYS.leaderboards, seedLeaderboards, LeaderboardsSchema);
 
       let profile: Profile | null = null;
       try {
         const raw = localStorage.getItem(LS_KEYS.profile);
-        if (raw) profile = JSON.parse(raw) as Profile;
-      } catch {}
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          const result = ProfileSchema.safeParse(parsed);
+          if (result.success) {
+            profile = result.data;
+          } else {
+            console.error("[store] 프로필 스키마 불일치, 초기화합니다:", result.error.issues);
+            localStorage.removeItem(LS_KEYS.profile);
+          }
+        }
+      } catch (e) {
+        console.error("[store] 프로필 로드 실패:", e);
+      }
 
       set({
         hackathons,
@@ -83,6 +104,7 @@ export const useStore = create<StoreState>((set, get) => ({
         initError: null,
       });
     } catch (e) {
+      console.error("[store] init 실패:", e);
       set({
         initialized: true,
         initError: e instanceof Error ? e.message : "데이터를 불러오는 중 오류가 발생했습니다.",

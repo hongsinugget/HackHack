@@ -22,22 +22,7 @@ const ROLE_CATEGORIES: { label: string; roles: string[] }[] = [
   { label: "발표자", roles: ["발표자"] },
 ];
 
-const ROLE_COLORS: Record<string, string> = {
-  Frontend: "#38bdf8",
-  Backend: "#34d399",
-  Designer: "#f472b6",
-  "ML Engineer": "#a78bfa",
-  PM: "#fbbf24",
-  기획자: "#fb923c",
-  "Data Analyst": "#60a5fa",
-  "Data Scientist": "#10b981",
-  "DevOps Engineer": "#f59e0b",
-  "Full Stack Developer": "#818cf8",
-  "AI Researcher": "#e879f9",
-  "Data Engineer": "#22d3ee",
-  "Service 기획자": "#fb923c",
-  발표자: "#facc15",
-};
+import { ROLE_COLORS, ALL_ROLES } from "@/lib/constants";
 
 function TeamCard({
   team,
@@ -176,8 +161,6 @@ function CreateTeamModal({
   const [contactUrl, setContactUrl] = useState("");
   const [inviteCode, setInviteCode] = useState("");
   const [copied, setCopied] = useState(false);
-  const allRoles = ["Data Analyst", "ML Engineer", "Data Scientist", "DevOps Engineer", "Full Stack Developer", "AI Researcher", "Data Engineer", "Designer", "PM", "Service 기획자", "발표자"];
-
   const toggleRole = (role: string) =>
     setLookingFor((prev) => prev.includes(role) ? prev.filter((r) => r !== role) : [...prev, role]);
 
@@ -347,7 +330,7 @@ function CreateTeamModal({
           <div>
             <label style={{ fontSize: "0.8rem", color: "var(--muted)", display: "block", marginBottom: 8 }}>모집 직군</label>
             <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-              {allRoles.map((role) => (
+              {ALL_ROLES.map((role) => (
                 <button
                   key={role}
                   type="button"
@@ -421,9 +404,8 @@ function ApplyModal({
   onClose: () => void;
   onConfirm: (teamCode: string, role: string) => void;
 }) {
-  const allRoles = ["Data Analyst", "ML Engineer", "Data Scientist", "DevOps Engineer", "Full Stack Developer", "AI Researcher", "Data Engineer", "Designer", "PM", "Service 기획자", "발표자", "Frontend", "Backend"];
   const [selectedRole, setSelectedRole] = useState(defaultRole ?? "");
-  const displayRoles = lookingFor.length > 0 ? lookingFor : allRoles;
+  const displayRoles = lookingFor.length > 0 ? lookingFor : ALL_ROLES;
 
   return (
     <div

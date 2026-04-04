@@ -7,6 +7,7 @@ import { useStore } from "@/lib/store";
 import { getHackathonDetail } from "@/lib/detailData";
 import { formatPrize, dDayLabel, isRushMode } from "@/lib/utils";
 import StatusBadge from "@/components/StatusBadge";
+import { ROLE_COLORS } from "@/lib/constants";
 
 const MEDAL_EMOJI: Record<string, string> = { "1st": "🥇", "2nd": "🥈", "3rd": "🥉" };
 const MEDAL_COLORS: Record<string, string> = { "1st": "#fbbf24", "2nd": "#94a3b8", "3rd": "#b45309" };
@@ -20,15 +21,6 @@ const SECTIONS = [
   { id: "teams", label: "팀 찾기" },
   { id: "submit", label: "제출" },
 ];
-
-const ROLE_COLORS: Record<string, string> = {
-  "Backend": "#3b82f6",
-  "Frontend": "#8b5cf6",
-  "ML Engineer": "#10b981",
-  "Data": "#f59e0b",
-  "Designer": "#ec4899",
-  "PM": "#6366f1",
-};
 
 function scrollToSection(id: string) {
   const el = document.getElementById(id);

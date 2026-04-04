@@ -5,30 +5,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { toast } from "sonner";
-
-const ROLE_COLORS: Record<string, string> = {
-  Frontend: "#38bdf8",
-  Backend: "#34d399",
-  Designer: "#f472b6",
-  "ML Engineer": "#a78bfa",
-  PM: "#fbbf24",
-  기획자: "#fb923c",
-  "Data Analyst": "#60a5fa",
-  "Data Scientist": "#10b981",
-  "DevOps Engineer": "#f59e0b",
-  "Full Stack Developer": "#818cf8",
-  "AI Researcher": "#e879f9",
-  "Data Engineer": "#22d3ee",
-  "Service 기획자": "#fb923c",
-  발표자: "#facc15",
-};
-
-const ALL_ROLES = [
-  "Data Analyst", "ML Engineer", "Data Scientist", "DevOps Engineer",
-  "Full Stack Developer", "AI Researcher", "Data Engineer",
-  "Designer", "PM", "Service 기획자", "발표자",
-  "Frontend", "Backend",
-];
+import { NoticesSchema, TeamSubmissionSchema } from "@/lib/schemas";
+import { ROLE_COLORS, ALL_ROLES } from "@/lib/constants";
+import { useCopyToClipboard } from "@/hooks/useCopyToClipboard";
+import HomeTab from "./_components/HomeTab";
+import MembersTab from "./_components/MembersTab";
+import NoticesTab from "./_components/NoticesTab";
+import SubmitTab from "./_components/SubmitTab";
+import SettingsTab from "./_components/SettingsTab";
+import DelegateModal from "./_components/DelegateModal";
 
 type Notice = { id: string; text: string; createdAt: string };
 type TeamSubmission = { projectName: string; githubUrl: string; demoUrl: string; notes?: string; fileName?: string; submittedAt: string; teamName: string };
@@ -60,10 +45,19 @@ export default function SpacePage({ params }: { params: Promise<{ teamCode: stri
   const isEnded = hackathon?.status === "ended";
 
   // 초대 링크
-  const [copied, setCopied] = useState(false);
-  const inviteUrl = team?.contact.url.startsWith("http")
-    ? team.contact.url.replace(/^https?:\/\/[^/]+/, typeof window !== "undefined" ? window.location.origin : "")
-    : null;
+  const { copied, copy: copyInviteUrl } = useCopyToClipboard();
+  const inviteUrl = (() => {
+    if (!team?.contact.url) return null;
+    try {
+      const parsed = new URL(team.contact.url);
+      if (parsed.protocol !== "https:" && parsed.protocol !== "http:") return null;
+      return typeof window !== "undefined"
+        ? `${window.location.origin}${parsed.pathname}${parsed.search}${parsed.hash}`
+        : team.contact.url;
+    } catch {
+      return null;
+    }
+  })();
 
   // 팀 공지
   const noticeKey = `hh_notices_${teamCode}`;
@@ -73,8 +67,18 @@ export default function SpacePage({ params }: { params: Promise<{ teamCode: stri
   useEffect(() => {
     try {
       const raw = localStorage.getItem(noticeKey);
-      if (raw) setNotices(JSON.parse(raw));
-    } catch {}
+      if (raw) {
+        const result = NoticesSchema.safeParse(JSON.parse(raw));
+        if (result.success) {
+          setNotices(result.data);
+        } else {
+          console.error("[SpacePage] 공지 데이터 스키마 불일치:", result.error.issues);
+          localStorage.removeItem(noticeKey);
+        }
+      }
+    } catch (e) {
+      console.error("[SpacePage] 공지 로드 실패:", e);
+    }
   }, [noticeKey]);
 
   const saveNotices = (next: Notice[]) => {
@@ -138,8 +142,18 @@ export default function SpacePage({ params }: { params: Promise<{ teamCode: stri
   useEffect(() => {
     try {
       const raw = localStorage.getItem(subKey);
-      if (raw) setSubmission(JSON.parse(raw));
-    } catch {}
+      if (raw) {
+        const result = TeamSubmissionSchema.safeParse(JSON.parse(raw));
+        if (result.success) {
+          setSubmission(result.data);
+        } else {
+          console.error("[SpacePage] 제출 데이터 스키마 불일치:", result.error.issues);
+          localStorage.removeItem(subKey);
+        }
+      }
+    } catch (e) {
+      console.error("[SpacePage] 제출 데이터 로드 실패:", e);
+    }
   }, [subKey]);
 
   const handleSubmit = async () => {
@@ -251,10 +265,7 @@ export default function SpacePage({ params }: { params: Promise<{ teamCode: stri
 
   const handleCopy = () => {
     if (!inviteUrl) return;
-    navigator.clipboard.writeText(inviteUrl).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
+    copyInviteUrl(inviteUrl);
   };
 
   if (!initialized) {
@@ -399,532 +410,83 @@ export default function SpacePage({ params }: { params: Promise<{ teamCode: stri
 
       {/* 탭 콘텐츠 */}
 
-      {/* 홈 탭 */}
       {activeTab === "home" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14, padding: "1.25rem" }}>
-            <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--muted)", marginBottom: "0.75rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>팀 소개</div>
-            <p style={{ fontSize: "0.9rem", color: "var(--text)", lineHeight: 1.7, marginBottom: "0.5rem" }}>
-              {team.intro}
-            </p>
-            <div style={{ fontSize: "0.8rem", color: "var(--muted)" }}>팀원 {team.memberCount}명</div>
-          </div>
-
-          {inviteUrl && !isEnded && (
-            <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14, padding: "1.25rem" }}>
-              <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--muted)", marginBottom: "0.75rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>초대 링크</div>
-              <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-                <div style={{
-                  flex: 1, padding: "0.6rem 0.875rem", borderRadius: 8,
-                  background: "var(--surface2)", border: "1px solid var(--border)",
-                  fontSize: "0.8rem", color: "var(--muted)",
-                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                }}>
-                  {inviteUrl}
-                </div>
-                <button
-                  onClick={handleCopy}
-                  style={{
-                    padding: "0.6rem 1rem", borderRadius: 8, fontWeight: 700,
-                    fontSize: "0.8rem", whiteSpace: "nowrap", cursor: "pointer",
-                    background: copied ? "rgba(16,185,129,0.15)" : "rgba(124,58,237,0.12)",
-                    color: copied ? "#10b981" : "#a78bfa",
-                    border: copied ? "1px solid rgba(16,185,129,0.3)" : "1px solid rgba(124,58,237,0.25)",
-                    transition: "all 0.2s",
-                  }}
-                >
-                  {copied ? "✓ 복사됨" : "📋 복사"}
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
+        <HomeTab team={team} inviteUrl={inviteUrl} isEnded={isEnded} copied={copied} onCopy={handleCopy} />
       )}
 
-      {/* 팀원 탭 */}
       {activeTab === "members" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-          <div style={{ fontSize: "0.8rem", color: "var(--muted)", marginBottom: "0.25rem" }}>총 {(team.members ?? []).length}명</div>
-          {(team.members ?? []).length === 0 ? (
-            <div style={{ textAlign: "center", padding: "2rem", color: "var(--muted)", fontSize: "0.85rem" }}>팀원 정보 없음</div>
-          ) : (
-            (team.members ?? []).map((nickname) => {
-              const isMe = nickname === profile?.nickname;
-              const isThisLeader = nickname === team.leader;
-              return (
-                <div key={nickname} style={{
-                  display: "flex", alignItems: "center", gap: "0.625rem",
-                  padding: "0.75rem 1rem", borderRadius: 10,
-                  background: isMe ? "rgba(124,58,237,0.06)" : "var(--surface)",
-                  border: isMe ? "1px solid rgba(124,58,237,0.2)" : "1px solid var(--border)",
-                }}>
-                  <div style={{
-                    width: 34, height: 34, borderRadius: "50%", flexShrink: 0,
-                    background: isThisLeader ? "rgba(251,191,36,0.2)" : "rgba(124,58,237,0.12)",
-                    display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.9rem",
-                  }}>
-                    {isThisLeader ? "👑" : "👤"}
-                  </div>
-                  <span style={{ flex: 1, fontSize: "0.875rem", fontWeight: isMe ? 700 : 400 }}>{nickname}</span>
-                  <div style={{ display: "flex", gap: "0.375rem", alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
-                    {(team.memberRoles ?? {})[nickname] && (
-                      <span style={{
-                        fontSize: "0.68rem", padding: "2px 7px", borderRadius: 9999,
-                        background: `${ROLE_COLORS[(team.memberRoles ?? {})[nickname]] ?? "#6b6b80"}20`,
-                        color: ROLE_COLORS[(team.memberRoles ?? {})[nickname]] ?? "var(--muted)",
-                        border: `1px solid ${ROLE_COLORS[(team.memberRoles ?? {})[nickname]] ?? "#6b6b80"}40`,
-                      }}>
-                        {(team.memberRoles ?? {})[nickname]}
-                      </span>
-                    )}
-                    {isThisLeader && (
-                      <span style={{ fontSize: "0.68rem", padding: "2px 7px", borderRadius: 9999, background: "rgba(251,191,36,0.15)", color: "#fbbf24", border: "1px solid rgba(251,191,36,0.3)" }}>팀장</span>
-                    )}
-                    {isMe && (
-                      <span style={{ fontSize: "0.68rem", padding: "2px 7px", borderRadius: 9999, background: "rgba(124,58,237,0.12)", color: "#a78bfa", border: "1px solid rgba(124,58,237,0.25)" }}>나</span>
-                    )}
-                  </div>
-                </div>
-              );
-            })
-          )}
-
-          {/* 설정 탭 안내 */}
-          <div style={{ marginTop: "1rem", padding: "0.75rem 1rem", background: "var(--surface2)", borderRadius: 8, border: "1px solid var(--border)", fontSize: "0.8rem", color: "var(--muted)" }}>
-            ⚙️ 팀 나가기 · 위임 · 삭제는 <button onClick={() => setActiveTab("settings")} style={{ background: "none", border: "none", color: "#a78bfa", cursor: "pointer", fontWeight: 700, fontSize: "0.8rem", padding: 0 }}>설정 탭</button>에서 할 수 있습니다
-          </div>
-        </div>
+        <MembersTab team={team} profile={profile} onGoToSettings={() => setActiveTab("settings")} />
       )}
 
-      {/* 공지 탭 */}
       {activeTab === "notices" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-          {!isEnded && (
-            <div style={{ display: "flex", gap: "0.5rem" }}>
-              <input
-                value={noticeInput}
-                onChange={(e) => setNoticeInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && addNotice()}
-                placeholder="공지 내용을 입력하세요 (Enter)"
-                style={{
-                  flex: 1, padding: "0.625rem 0.875rem", borderRadius: 8,
-                  background: "var(--surface2)", border: "1px solid var(--border)",
-                  color: "var(--text)", fontSize: "0.875rem", outline: "none",
-                }}
-              />
-              <button
-                onClick={addNotice}
-                style={{ padding: "0.625rem 1rem", borderRadius: 8, fontWeight: 700, background: "var(--accent)", color: "#fff", border: "none", fontSize: "0.875rem", cursor: "pointer", whiteSpace: "nowrap" }}
-              >
-                등록
-              </button>
-            </div>
-          )}
-          {notices.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "3rem 1rem", color: "var(--muted)", fontSize: "0.875rem" }}>
-              <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>📭</div>
-              등록된 공지가 없습니다
-            </div>
-          ) : (
-            notices.map((n) => (
-              <div key={n.id} style={{
-                display: "flex", alignItems: "flex-start", gap: "0.75rem",
-                padding: "0.875rem 1rem", borderRadius: 10,
-                background: "var(--surface)", border: "1px solid var(--border)",
-              }}>
-                <span style={{ color: "#a78bfa", fontSize: "0.8rem", flexShrink: 0, marginTop: 3 }}>•</span>
-                <span style={{ flex: 1, fontSize: "0.875rem", lineHeight: 1.6 }}>{n.text}</span>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexShrink: 0 }}>
-                  <span style={{ fontSize: "0.7rem", color: "var(--muted)" }}>
-                    {new Date(n.createdAt).toLocaleDateString("ko-KR", { month: "short", day: "numeric" })}
-                  </span>
-                  {!isEnded && (
-                    <button
-                      onClick={() => deleteNotice(n.id)}
-                      style={{ padding: "2px 8px", borderRadius: 4, fontSize: "0.72rem", background: "transparent", border: "1px solid var(--border)", color: "var(--muted)", cursor: "pointer" }}
-                    >
-                      삭제
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+        <NoticesTab
+          notices={notices}
+          noticeInput={noticeInput}
+          isEnded={isEnded}
+          onInputChange={setNoticeInput}
+          onAdd={addNotice}
+          onDelete={deleteNotice}
+        />
       )}
 
-      {/* 제출 탭 */}
       {activeTab === "submit" && team.hackathonSlug && (
-        <div>
-          {submission ? (
-            <div>
-              <div style={{
-                display: "flex", alignItems: "center", gap: "0.875rem",
-                padding: "1.1rem 1.25rem", borderRadius: 12, marginBottom: "1.25rem",
-                background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.25)",
-              }}>
-                <span style={{ fontSize: "1.75rem" }}>🎉</span>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: "1rem", color: "#10b981" }}>제출 완료</div>
-                  <div style={{ fontSize: "0.775rem", color: "var(--muted)" }}>
-                    {new Date(submission.submittedAt).toLocaleString("ko-KR", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
-                  </div>
-                </div>
-              </div>
-              <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: "1.25rem", display: "flex", flexDirection: "column", gap: "0.625rem" }}>
-                <div style={{ fontSize: "1rem", fontWeight: 700, color: "var(--text)", marginBottom: "0.25rem" }}>{submission.projectName}</div>
-                <a href={submission.githubUrl} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem", color: "#a78bfa", textDecoration: "none" }}>🔗 GitHub</a>
-                <a href={submission.demoUrl} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem", color: "#a78bfa", textDecoration: "none" }}>🌐 시연 링크</a>
-                {submission.notes && <div style={{ fontSize: "0.85rem", color: "var(--muted)", padding: "0.625rem 0.875rem", background: "var(--surface2)", borderRadius: 8, border: "1px solid var(--border)", lineHeight: 1.6 }}>{submission.notes}</div>}
-                {submission.fileName && <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem", color: "var(--muted)" }}>📄 {submission.fileName}</div>}
-              </div>
-            </div>
-          ) : isEnded ? (
-            <div style={{ textAlign: "center", padding: "4rem 1rem", color: "var(--muted)" }}>
-              <div style={{ fontSize: "2.5rem", marginBottom: "0.75rem" }}>🔒</div>
-              <div style={{ fontWeight: 700, fontSize: "1rem", marginBottom: "0.375rem" }}>제출 마감</div>
-              <div style={{ fontSize: "0.85rem" }}>대회가 종료되어 제출할 수 없습니다</div>
-            </div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-              <div>
-                <label style={{ fontSize: "0.8rem", color: "var(--muted)", display: "block", marginBottom: 5 }}>프로젝트명 *</label>
-                <input
-                  value={projectName}
-                  onChange={(e) => { setProjectName(e.target.value); setSubErrors((p) => ({ ...p, projectName: "" })); }}
-                  placeholder="프로젝트 이름을 입력해주세요"
-                  style={{ width: "100%", padding: "0.625rem 0.875rem", borderRadius: 8, background: "var(--surface2)", border: `1px solid ${subErrors.projectName ? "#ef4444" : "var(--border)"}`, color: "var(--text)", fontSize: "0.875rem", outline: "none" }}
-                />
-                {subErrors.projectName && <div style={{ fontSize: "0.75rem", color: "#ef4444", marginTop: 4 }}>{subErrors.projectName}</div>}
-              </div>
-              <div>
-                <label style={{ fontSize: "0.8rem", color: "var(--muted)", display: "block", marginBottom: 5 }}>GitHub URL *</label>
-                <input
-                  value={githubUrl}
-                  onChange={(e) => { setGithubUrl(e.target.value); setSubErrors((p) => ({ ...p, github: "" })); }}
-                  placeholder="https://github.com/..."
-                  style={{ width: "100%", padding: "0.625rem 0.875rem", borderRadius: 8, background: "var(--surface2)", border: `1px solid ${subErrors.github ? "#ef4444" : "var(--border)"}`, color: "var(--text)", fontSize: "0.875rem", outline: "none" }}
-                />
-                {subErrors.github && <div style={{ fontSize: "0.75rem", color: "#ef4444", marginTop: 4 }}>{subErrors.github}</div>}
-              </div>
-              <div>
-                <label style={{ fontSize: "0.8rem", color: "var(--muted)", display: "block", marginBottom: 5 }}>시연 URL *</label>
-                <input
-                  value={demoUrl}
-                  onChange={(e) => { setDemoUrl(e.target.value); setSubErrors((p) => ({ ...p, demo: "" })); }}
-                  placeholder="https://..."
-                  style={{ width: "100%", padding: "0.625rem 0.875rem", borderRadius: 8, background: "var(--surface2)", border: `1px solid ${subErrors.demo ? "#ef4444" : "var(--border)"}`, color: "var(--text)", fontSize: "0.875rem", outline: "none" }}
-                />
-                {subErrors.demo && <div style={{ fontSize: "0.75rem", color: "#ef4444", marginTop: 4 }}>{subErrors.demo}</div>}
-              </div>
-              <div>
-                <label style={{ fontSize: "0.8rem", color: "var(--muted)", display: "block", marginBottom: 5 }}>
-                  메모 <span style={{ fontSize: "0.75rem", fontWeight: 400 }}>(선택)</span>
-                </label>
-                <textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="심사위원이나 팀원에게 전달할 메모를 남겨주세요"
-                  rows={3}
-                  style={{ width: "100%", padding: "0.625rem 0.875rem", borderRadius: 8, background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "0.875rem", resize: "vertical", outline: "none" }}
-                />
-              </div>
-              <div>
-                <label style={{ fontSize: "0.8rem", color: "var(--muted)", display: "block", marginBottom: 5 }}>
-                  서비스 소개서 <span style={{ fontSize: "0.75rem", fontWeight: 400 }}>(PDF/PPTX, 선택)</span>
-                </label>
-                <label style={{ display: "flex", alignItems: "center", gap: "0.625rem", padding: "0.625rem 0.875rem", borderRadius: 8, cursor: "pointer", background: "var(--surface2)", border: "1px solid var(--border)" }}>
-                  <input type="file" accept=".pdf,.pptx,.ppt" style={{ display: "none" }} onChange={(e) => setSelectedFile(e.target.files?.[0] ?? null)} />
-                  <span style={{ fontSize: "0.85rem", color: "var(--accent)" }}>📎 파일 선택</span>
-                  <span style={{ fontSize: "0.8rem", color: selectedFile ? "var(--text)" : "var(--muted)", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {selectedFile ? selectedFile.name : "PDF 또는 PPTX 파일"}
-                  </span>
-                  {selectedFile && (
-                    <button onClick={(e) => { e.preventDefault(); setSelectedFile(null); }} style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontSize: "0.85rem", flexShrink: 0 }}>✕</button>
-                  )}
-                </label>
-              </div>
-              <button
-                onClick={handleSubmit}
-                style={{ padding: "0.75rem", borderRadius: 8, fontWeight: 700, fontSize: "0.95rem", background: "var(--accent)", color: "#fff", border: "none", cursor: "pointer" }}
-              >
-                🚀 제출하기
-              </button>
-            </div>
-          )}
-        </div>
+        <SubmitTab
+          team={team}
+          hackathon={hackathon}
+          submission={submission}
+          isEnded={isEnded}
+          projectName={projectName}
+          githubUrl={githubUrl}
+          demoUrl={demoUrl}
+          notes={notes}
+          selectedFile={selectedFile}
+          subErrors={subErrors}
+          onProjectNameChange={(v) => { setProjectName(v); setSubErrors((p) => ({ ...p, projectName: "" })); }}
+          onGithubUrlChange={(v) => { setGithubUrl(v); setSubErrors((p) => ({ ...p, github: "" })); }}
+          onDemoUrlChange={(v) => { setDemoUrl(v); setSubErrors((p) => ({ ...p, demo: "" })); }}
+          onNotesChange={setNotes}
+          onFileChange={setSelectedFile}
+          onSubmit={handleSubmit}
+        />
       )}
 
-      {/* 설정 탭 — 팀장 */}
-      {activeTab === "settings" && isLeader && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-
-          {/* 가입 요청 */}
-          {(team.joinRequests ?? []).length > 0 && (
-            <section style={{ background: "var(--surface)", border: "1px solid rgba(251,191,36,0.3)", borderRadius: 14, padding: "1.25rem" }}>
-              <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "#fbbf24", marginBottom: "0.875rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                가입 요청 {(team.joinRequests ?? []).length}건
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
-                {(team.joinRequests ?? []).map((req) => (
-                  <div key={req.id} style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.75rem 1rem", borderRadius: 10, background: "var(--surface2)", border: "1px solid var(--border)" }}>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 700, fontSize: "0.9rem" }}>{req.nickname}</div>
-                      <div style={{ fontSize: "0.72rem", color: "var(--muted)", marginTop: 2 }}>
-                        {new Date(req.requestedAt).toLocaleString("ko-KR", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => { approveJoinRequest(teamCode, req.nickname); toast.success(`${req.nickname}님을 팀원으로 승인했습니다 ✅`); }}
-                      style={{ padding: "0.4rem 0.875rem", borderRadius: 8, fontSize: "0.8rem", fontWeight: 700, background: "rgba(16,185,129,0.15)", color: "#10b981", border: "1px solid rgba(16,185,129,0.3)", cursor: "pointer" }}
-                    >
-                      승인
-                    </button>
-                    <button
-                      onClick={() => { rejectJoinRequest(teamCode, req.nickname); toast.success(`${req.nickname}님의 요청을 거절했습니다`); }}
-                      style={{ padding: "0.4rem 0.875rem", borderRadius: 8, fontSize: "0.8rem", fontWeight: 600, background: "transparent", color: "var(--muted)", border: "1px solid var(--border)", cursor: "pointer" }}
-                    >
-                      거절
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* 팀 소개 */}
-          <section style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14, padding: "1.25rem" }}>
-            <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--muted)", marginBottom: "0.875rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>팀 소개</div>
-            <textarea
-              value={editIntro}
-              onChange={(e) => { if (!isEnded) { setEditIntro(e.target.value); setIntroDirty(true); } }}
-              rows={4}
-              disabled={isEnded}
-              placeholder="팀 소개를 입력해주세요"
-              style={{
-                width: "100%", padding: "0.625rem 0.875rem", borderRadius: 8,
-                background: "var(--surface2)", border: "1px solid var(--border)",
-                color: "var(--text)", fontSize: "0.875rem", resize: "vertical", outline: "none",
-                cursor: isEnded ? "not-allowed" : "auto",
-              }}
-            />
-            {introDirty && !isEnded && (
-              <button
-                onClick={handleSaveIntro}
-                style={{ marginTop: "0.75rem", padding: "0.5rem 1.25rem", borderRadius: 8, fontWeight: 700, fontSize: "0.875rem", background: "var(--accent)", color: "#fff", border: "none", cursor: "pointer" }}
-              >
-                등록하기
-              </button>
-            )}
-          </section>
-
-          {/* 모집 공고 수정 */}
-          <section style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14, padding: "1.25rem", opacity: isEnded ? 0.6 : 1 }}>
-            <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--muted)", marginBottom: "0.875rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>모집 공고 수정</div>
-
-            {/* 최대 팀원 수 */}
-            <div style={{ marginBottom: "1.1rem" }}>
-              <div style={{ fontSize: "0.8rem", color: "var(--muted)", marginBottom: "0.5rem" }}>최대 팀원 수</div>
-              <div style={{ display: "flex", gap: "0.375rem", flexWrap: "wrap" }}>
-                {[2, 3, 4, 5, 6, 7, 8].map((n) => (
-                  <button
-                    key={n}
-                    disabled={isEnded}
-                    onClick={() => { setEditMaxMembers(n); setRecruitDirty(true); }}
-                    style={{
-                      width: 36, height: 36, borderRadius: 8, fontSize: "0.875rem",
-                      fontWeight: editMaxMembers === n ? 700 : 400,
-                      background: editMaxMembers === n ? "rgba(124,58,237,0.2)" : "transparent",
-                      color: editMaxMembers === n ? "#a78bfa" : "var(--muted)",
-                      border: editMaxMembers === n ? "1px solid rgba(124,58,237,0.5)" : "1px solid var(--border)",
-                      cursor: isEnded ? "not-allowed" : "pointer",
-                    }}
-                  >
-                    {n}
-                  </button>
-                ))}
-                <span style={{ fontSize: "0.8rem", color: "var(--muted)", alignSelf: "center", marginLeft: 4 }}>명</span>
-              </div>
-              <div style={{ fontSize: "0.75rem", color: "var(--muted)", marginTop: "0.375rem" }}>
-                현재 {team.memberCount}명 참여 중 · 최대 {editMaxMembers}명
-              </div>
-            </div>
-
-            {/* 모집 역할 */}
-            <div style={{ marginBottom: "1rem" }}>
-              <div style={{ fontSize: "0.8rem", color: "var(--muted)", marginBottom: "0.5rem" }}>모집 역할 <span style={{ fontSize: "0.72rem" }}>(구해진 역할은 체크 해제)</span></div>
-              <div style={{ display: "flex", gap: "0.375rem", flexWrap: "wrap" }}>
-                {ALL_ROLES.map((role) => {
-                  const selected = editLookingFor.includes(role);
-                  return (
-                    <button
-                      key={role}
-                      disabled={isEnded}
-                      onClick={() => toggleEditRole(role)}
-                      style={{
-                        padding: "0.3rem 0.75rem", borderRadius: 20, fontSize: "0.78rem",
-                        fontWeight: selected ? 700 : 400,
-                        background: selected ? `${ROLE_COLORS[role] ?? "#7c3aed"}20` : "transparent",
-                        color: selected ? (ROLE_COLORS[role] ?? "#a78bfa") : "var(--muted)",
-                        border: selected ? `1px solid ${ROLE_COLORS[role] ?? "#7c3aed"}50` : "1px solid var(--border)",
-                        cursor: isEnded ? "not-allowed" : "pointer",
-                        transition: "all 0.15s",
-                      }}
-                    >
-                      {selected ? "✓ " : ""}{role}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {recruitDirty && !isEnded && (
-              <button
-                onClick={handleSaveRecruit}
-                style={{ padding: "0.5rem 1.25rem", borderRadius: 8, fontWeight: 700, fontSize: "0.875rem", background: "var(--accent)", color: "#fff", border: "none", cursor: "pointer" }}
-              >
-                저장하기
-              </button>
-            )}
-          </section>
-
-          {/* 팀원 관리 (내보내기) */}
-          <section style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14, padding: "1.25rem" }}>
-            <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--muted)", marginBottom: "0.875rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>팀원 관리</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-              {(team.members ?? []).map((nickname) => {
-                const isMe = nickname === profile?.nickname;
-                return (
-                  <div key={nickname} style={{
-                    display: "flex", alignItems: "center", gap: "0.75rem",
-                    padding: "0.625rem 0.875rem", borderRadius: 8,
-                    background: "var(--surface2)", border: "1px solid var(--border)",
-                  }}>
-                    <span style={{ fontSize: "0.875rem", flex: 1 }}>
-                      {nickname === team.leader ? "👑 " : "👤 "}{nickname}
-                      {isMe && <span style={{ fontSize: "0.7rem", color: "#a78bfa", marginLeft: 6 }}>(나)</span>}
-                    </span>
-                    {!isMe && (
-                      <button
-                        onClick={() => handleKick(nickname)}
-                        style={{
-                          padding: "3px 10px", borderRadius: 6, fontSize: "0.75rem",
-                          background: "rgba(239,68,68,0.08)", color: "#ef4444",
-                          border: "1px solid rgba(239,68,68,0.25)", cursor: "pointer",
-                        }}
-                      >
-                        내보내기
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-
-          {/* 위험 영역 */}
-          <section style={{ background: "var(--surface)", border: "1px solid rgba(239,68,68,0.15)", borderRadius: 14, padding: "1.25rem" }}>
-            <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "#ef4444", marginBottom: "0.875rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>위험 영역</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
-              {!isEnded && (
-                <button
-                  onClick={() => { setShowDelegateModal(true); setDelegateTo(""); }}
-                  style={{ padding: "0.5rem 1rem", borderRadius: 8, fontSize: "0.85rem", background: "rgba(251,191,36,0.1)", color: "#fbbf24", border: "1px solid rgba(251,191,36,0.3)", cursor: "pointer", fontWeight: 600, textAlign: "left" }}
-                >
-                  👑 팀장 위임
-                </button>
-              )}
-              {!showDeleteConfirm ? (
-                <button
-                  onClick={() => setShowDeleteConfirm(true)}
-                  style={{ padding: "0.5rem 1rem", borderRadius: 8, fontSize: "0.85rem", background: "rgba(239,68,68,0.08)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.25)", cursor: "pointer", textAlign: "left" }}
-                >
-                  🗑️ 팀 삭제
-                </button>
-              ) : (
-                <div style={{ padding: "1rem", background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 8 }}>
-                  <p style={{ fontSize: "0.825rem", color: "var(--text)", marginBottom: "0.75rem", lineHeight: 1.5 }}>
-                    정말 팀을 삭제하시겠습니까?<br />
-                    <span style={{ color: "var(--muted)", fontSize: "0.78rem" }}>이 작업은 되돌릴 수 없습니다.</span>
-                  </p>
-                  <div style={{ display: "flex", gap: "0.5rem" }}>
-                    <button onClick={() => setShowDeleteConfirm(false)} style={{ flex: 1, padding: "0.4rem", borderRadius: 6, fontSize: "0.8rem", background: "transparent", border: "1px solid var(--border)", color: "var(--muted)", cursor: "pointer" }}>취소</button>
-                    <button onClick={handleDelete} style={{ flex: 1, padding: "0.4rem", borderRadius: 6, fontSize: "0.8rem", background: "rgba(239,68,68,0.15)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.3)", cursor: "pointer", fontWeight: 700 }}>삭제 확인</button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </section>
-        </div>
+      {activeTab === "settings" && (
+        <SettingsTab
+          team={team}
+          profile={profile}
+          isLeader={isLeader}
+          isEnded={isEnded}
+          editIntro={editIntro}
+          introDirty={introDirty}
+          onIntroChange={(v) => { setEditIntro(v); setIntroDirty(true); }}
+          onSaveIntro={handleSaveIntro}
+          editLookingFor={editLookingFor}
+          editMaxMembers={editMaxMembers}
+          recruitDirty={recruitDirty}
+          onToggleEditRole={toggleEditRole}
+          onMaxMembersChange={(n) => { setEditMaxMembers(n); setRecruitDirty(true); }}
+          onSaveRecruit={handleSaveRecruit}
+          onKick={handleKick}
+          onApprove={(nickname) => { approveJoinRequest(teamCode, nickname); toast.success(`${nickname}님을 팀원으로 승인했습니다 ✅`); }}
+          onReject={(nickname) => { rejectJoinRequest(teamCode, nickname); toast.success(`${nickname}님의 요청을 거절했습니다`); }}
+          showDeleteConfirm={showDeleteConfirm}
+          onShowDelegate={() => { setShowDelegateModal(true); setDelegateTo(""); }}
+          onShowDeleteConfirm={() => setShowDeleteConfirm(true)}
+          onCancelDelete={() => setShowDeleteConfirm(false)}
+          onDelete={handleDelete}
+          onLeave={handleLeave}
+        />
       )}
 
-      {/* 설정 탭 — 팀원 */}
-      {activeTab === "settings" && !isLeader && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-          <div style={{ padding: "1.25rem", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14 }}>
-            <div style={{ fontSize: "0.875rem", fontWeight: 600, marginBottom: "0.375rem" }}>팀 나가기</div>
-            <div style={{ fontSize: "0.8rem", color: "var(--muted)", marginBottom: "1rem", lineHeight: 1.5 }}>
-              팀을 나가면 다시 초대를 받아야 합니다.
-            </div>
-            <button
-              onClick={handleLeave}
-              style={{ padding: "0.5rem 1.25rem", borderRadius: 8, fontSize: "0.875rem", background: "transparent", color: "var(--muted)", border: "1px solid var(--border)", cursor: "pointer" }}
-            >
-              팀 나가기
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* 팀장 위임 모달 */}
       {showDelegateModal && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: "1rem" }}
-          onClick={(e) => e.target === e.currentTarget && setShowDelegateModal(false)}
-        >
-          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, padding: "1.75rem", width: "100%", maxWidth: 400 }}>
-            <h2 style={{ fontWeight: 800, fontSize: "1.1rem", marginBottom: "0.375rem" }}>👑 팀장 위임</h2>
-            <p style={{ fontSize: "0.825rem", color: "var(--muted)", marginBottom: "1.25rem" }}>새로운 팀장을 선택해주세요</p>
-            {(team.members ?? []).filter((m) => m !== profile?.nickname).length === 0 ? (
-              <div style={{ textAlign: "center", padding: "1.5rem", color: "var(--muted)", fontSize: "0.875rem" }}>위임할 팀원이 없습니다</div>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "1.25rem" }}>
-                {(team.members ?? []).filter((m) => m !== profile?.nickname).map((nickname) => (
-                  <button
-                    key={nickname}
-                    onClick={() => setDelegateTo(nickname)}
-                    style={{
-                      display: "flex", alignItems: "center", gap: "0.75rem",
-                      padding: "0.75rem 1rem", borderRadius: 10, textAlign: "left",
-                      background: delegateTo === nickname ? "rgba(251,191,36,0.12)" : "var(--surface2)",
-                      border: delegateTo === nickname ? "1px solid rgba(251,191,36,0.4)" : "1px solid var(--border)",
-                      cursor: "pointer", transition: "all 0.15s",
-                    }}
-                  >
-                    <div style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(124,58,237,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.85rem", flexShrink: 0 }}>👤</div>
-                    <span style={{ flex: 1, fontSize: "0.875rem", fontWeight: delegateTo === nickname ? 700 : 400, color: delegateTo === nickname ? "#fbbf24" : "var(--text)" }}>{nickname}</span>
-                    {delegateTo === nickname && <span style={{ fontSize: "0.75rem", color: "#fbbf24" }}>선택됨</span>}
-                  </button>
-                ))}
-              </div>
-            )}
-            <div style={{ display: "flex", gap: "0.75rem" }}>
-              <button onClick={() => setShowDelegateModal(false)} style={{ flex: 1, padding: "0.625rem", borderRadius: 8, background: "transparent", border: "1px solid var(--border)", color: "var(--muted)", cursor: "pointer", fontSize: "0.875rem" }}>취소</button>
-              <button
-                onClick={handleDelegate}
-                disabled={!delegateTo}
-                style={{
-                  flex: 2, padding: "0.625rem", borderRadius: 8, fontWeight: 700, fontSize: "0.875rem",
-                  background: delegateTo ? "rgba(251,191,36,0.2)" : "transparent",
-                  color: delegateTo ? "#fbbf24" : "var(--muted)",
-                  border: delegateTo ? "1px solid rgba(251,191,36,0.4)" : "1px solid var(--border)",
-                  cursor: delegateTo ? "pointer" : "default",
-                }}
-              >
-                위임하기
-              </button>
-            </div>
-          </div>
-        </div>
+        <DelegateModal
+          team={team}
+          profile={profile}
+          delegateTo={delegateTo}
+          onSelect={setDelegateTo}
+          onConfirm={handleDelegate}
+          onClose={() => setShowDelegateModal(false)}
+        />
       )}
     </div>
   );

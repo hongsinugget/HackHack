@@ -5,6 +5,7 @@ import { useStore } from "@/lib/store";
 import { toast } from "sonner";
 import Link from "next/link";
 import type { Badge } from "@/lib/types";
+import { ALL_ROLES, ROLE_COLORS } from "@/lib/constants";
 
 const ALL_BADGES: Omit<Badge, "earnedAt">[] = [
   { id: "first_spark", emoji: "🔥", label: "첫 불꽃", description: "플랫폼 최초 방문 + 닉네임 설정" },
@@ -23,20 +24,6 @@ const AVATAR_EMOJIS = [
   "⚡", "🚀", "🔥", "💡", "🎯", "🏆",
   "🤖", "🦊", "🐼", "🦁", "🦋", "🌟",
 ];
-
-const ALL_ROLES = [
-  "Data Analyst", "ML Engineer", "Data Scientist", "DevOps Engineer",
-  "Full Stack Developer", "AI Researcher", "Data Engineer",
-  "Designer", "PM", "Service 기획자", "발표자", "Frontend", "Backend",
-];
-
-const ROLE_COLORS: Record<string, string> = {
-  Frontend: "#38bdf8", Backend: "#34d399", Designer: "#f472b6",
-  "ML Engineer": "#a78bfa", PM: "#fbbf24", "Service 기획자": "#fb923c",
-  "Data Analyst": "#60a5fa", "Data Scientist": "#10b981",
-  "DevOps Engineer": "#f59e0b", "Full Stack Developer": "#818cf8",
-  "AI Researcher": "#e879f9", "Data Engineer": "#22d3ee", 발표자: "#facc15",
-};
 
 function EditProfileModal({ onClose }: { onClose: () => void }) {
   const { profile, updateProfile } = useStore();

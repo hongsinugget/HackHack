@@ -1,17 +1,9 @@
+import { memo } from "react";
 import Link from "next/link";
 import type { Team } from "@/lib/types";
+import { ROLE_COLORS } from "@/lib/constants";
 
-const ROLE_COLORS: Record<string, string> = {
-  Frontend: "#38bdf8",
-  Backend: "#34d399",
-  Designer: "#f472b6",
-  "ML Engineer": "#a78bfa",
-  PM: "#fbbf24",
-  기획자: "#fb923c",
-  데이터: "#67e8f9",
-};
-
-function TeamCard({ team }: { team: Team }) {
+const TeamCard = memo(function TeamCard({ team }: { team: Team }) {
   return (
     <div className="card" style={{ padding: "1.25rem" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.625rem" }}>
@@ -89,7 +81,7 @@ function TeamCard({ team }: { team: Team }) {
       </div>
     </div>
   );
-}
+});
 
 export default function TeamPreview({ teams }: { teams: Team[] }) {
   const openTeams = teams.filter((t) => t.isOpen).slice(0, 3);

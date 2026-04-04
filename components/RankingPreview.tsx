@@ -1,9 +1,10 @@
+import { memo } from "react";
 import Link from "next/link";
 import type { Leaderboard } from "@/lib/types";
 
 const MEDALS = ["🥇", "🥈", "🥉"];
 
-export default function RankingPreview({ leaderboards }: { leaderboards: Leaderboard[] }) {
+const RankingPreview = memo(function RankingPreview({ leaderboards }: { leaderboards: Leaderboard[] }) {
   // 가장 최근 업데이트된 리더보드
   const board = leaderboards.sort(
     (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
@@ -77,4 +78,6 @@ export default function RankingPreview({ leaderboards }: { leaderboards: Leaderb
       </div>
     </section>
   );
-}
+});
+
+export default RankingPreview;

@@ -23,6 +23,12 @@ config/secrets.*
 CLAUDE.md
 plan-progress.md
 
+# Claude Code 작업 파일 (에이전트 설정, 대화 메모리)
+.claude/
+
+# Playwright MCP 테스트 아티팩트 (로그, 스크린샷)
+.playwright-mcp/
+
 # 루트 레벨 원본 에셋 (public/ 복사본으로 서빙)
 /*.png
 /*.jpg
