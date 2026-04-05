@@ -71,41 +71,23 @@ const TeamCard = memo(function TeamCard({ team, hackathonTitle }: { team: Team; 
             {team.memberCount}/{team.maxMembers}명
           </span>
         </div>
-        {team.contact.url ? (
-          <Link
-            href={team.contact.url}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: "8px 16px",
-              borderRadius: 6,
-              background: "var(--brand-primary, #7c3aed)",
-              color: "var(--text-light, #f0f2f5)",
-              fontSize: 13,
-              fontWeight: 600,
-              textDecoration: "none",
-            }}
-          >
-            합류하기
-          </Link>
-        ) : (
-          <span
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: "8px 16px",
-              borderRadius: 6,
-              background: "rgba(107,107,128,0.1)",
-              color: "var(--text-muted, #6b6b80)",
-              fontSize: 13,
-              fontWeight: 600,
-            }}
-          >
-            연락처 없음
-          </span>
-        )}
+        <Link
+          href="/camp"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "8px 16px",
+            borderRadius: 6,
+            background: "var(--brand-primary, #7c3aed)",
+            color: "var(--text-light, #f0f2f5)",
+            fontSize: 13,
+            fontWeight: 600,
+            textDecoration: "none",
+          }}
+        >
+          합류하기
+        </Link>
       </div>
     </div>
   );
