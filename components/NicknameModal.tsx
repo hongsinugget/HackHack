@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { useStore } from "@/lib/store";
 import { toast } from "sonner";
 
@@ -50,7 +51,9 @@ export default function NicknameModal() {
         }}
       >
         {/* 로고 */}
-        <div style={{ fontSize: "2.5rem", marginBottom: "0.5rem" }}>💨</div>
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: "0.5rem" }}>
+          <Image src="/icons/logo.svg" alt="핵핵 로고" width={64} height={64} />
+        </div>
         <div style={{ fontSize: "1.5rem", fontWeight: 800, color: "#a78bfa", marginBottom: "0.375rem" }}>
           핵핵에 오신 걸 환영합니다
         </div>
@@ -96,14 +99,14 @@ export default function NicknameModal() {
             borderRadius: 10,
             fontWeight: 700,
             fontSize: "1rem",
-            background: value.trim().length >= 2 ? "var(--accent)" : "rgba(124,58,237,0.3)",
+            background: value.trim().length >= 2 ? "var(--brand-primary)" : "rgba(124,58,237,0.3)",
             color: "#fff",
             border: "none",
             cursor: value.trim().length >= 2 ? "pointer" : "default",
             transition: "background 0.15s",
           }}
         >
-          시작하기 🚀
+          시작하기
         </button>
 
         <div style={{ marginTop: "1rem", fontSize: "0.72rem", color: "var(--muted)" }}>
