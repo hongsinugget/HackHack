@@ -17,11 +17,15 @@ function loadOrSeed<T>(key: string, fallback: T[], schema: ZodType<T[]>): T[] {
     if (raw) {
       const parsed = JSON.parse(raw);
       const result = schema.safeParse(parsed);
-      if (result.success) return result.data;
+      if (result.success) {
+        // 스키마 default/catch로 마이그레이션된 값이 있을 수 있으므로
+        // 파싱된 결과를 다시 저장해 다음 로드부터 에러 없이 통과하도록 함
+        const migrated = JSON.stringify(result.data);
+        if (migrated !== raw) localStorage.setItem(key, migrated);
+        return result.data;
+      }
       if (process.env.NODE_ENV !== "production") {
-        console.error(`[store] localStorage "${key}" 스키마 불일치:`, result.error.issues);
-      } else {
-        console.error(`[store] localStorage "${key}" 스키마 불일치, 시드 데이터로 복구합니다`);
+        console.warn(`[store] localStorage "${key}" 스키마 불일치 — 시드 데이터로 복구합니다.`);
       }
       localStorage.removeItem(key);
     }

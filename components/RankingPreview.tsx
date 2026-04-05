@@ -1,6 +1,7 @@
 "use client";
 
 import { memo, useState, useMemo } from "react";
+import Link from "next/link";
 import type { Leaderboard } from "@/lib/types";
 
 const RankingPreview = memo(function RankingPreview({ leaderboards }: { leaderboards: Leaderboard[] }) {
@@ -192,6 +193,36 @@ const RankingPreview = memo(function RankingPreview({ leaderboards }: { leaderbo
           </div>
           )}
         </div>
+
+        {/* Ranking/MoreButton */}
+        <Link href="/rankings" style={{ textDecoration: "none" }}>
+          <div
+            style={{
+              background: "var(--border-subtle, #dde1e6)",
+              borderRadius: 8,
+              padding: 10,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              transition: "opacity 0.15s",
+            }}
+            onMouseEnter={(e) => ((e.currentTarget as HTMLDivElement).style.opacity = "0.8")}
+            onMouseLeave={(e) => ((e.currentTarget as HTMLDivElement).style.opacity = "1")}
+          >
+            <span
+              style={{
+                fontSize: 14,
+                fontWeight: 600,
+                lineHeight: "20px",
+                color: "#4b5563",
+                whiteSpace: "nowrap",
+              }}
+            >
+              랭킹 전체 순위 더보기 ➔
+            </span>
+          </div>
+        </Link>
       </div>
     </section>
   );

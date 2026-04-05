@@ -10,11 +10,6 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ko" style={{ background: "#f0f2f5" }}>
-      {/* eslint-disable-next-line @next/next/no-head-element */}
-      <head>
-        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
-        <script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async />
-      </head>
       <body style={{ background: "#f0f2f5", color: "#12121a", margin: 0 }}>
         <ClientProviders>
           <main style={{ maxWidth: 1100, margin: "0 auto", padding: "2rem 1.25rem" }}>

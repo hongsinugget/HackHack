@@ -33,6 +33,7 @@ const CommunitySection = function CommunitySection({
   return (
     <>
       <section
+        className="community-section"
         style={{
           display: "flex",
           flexDirection: "column",

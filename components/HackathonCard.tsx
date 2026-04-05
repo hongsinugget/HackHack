@@ -3,7 +3,7 @@
 import { memo } from "react";
 import Link from "next/link";
 import type { Hackathon } from "@/lib/types";
-import { formatPrize, dDayLabel } from "@/lib/utils";
+import { formatPrize, dDayLabel, computeStatus } from "@/lib/utils";
 import StatusBadge from "./StatusBadge";
 import StarIcon from "./StarIcon";
 import { useStore } from "@/lib/store";
@@ -20,6 +20,7 @@ const HackathonCard = memo(function HackathonCard({
   maxTags?: number;
 }) {
   const dday = dDayLabel(h.period.submissionDeadlineAt);
+  const status = computeStatus(h.period);
   const isBookmarked = useStore((s) => s.profile?.bookmarks.includes(h.slug) ?? false);
   const toggleBookmark = useStore((s) => s.toggleBookmark);
   const tags = maxTags !== undefined ? h.tags.slice(0, maxTags) : h.tags;
@@ -29,6 +30,7 @@ const HackathonCard = memo(function HackathonCard({
       <div
         style={{
           background: "#ece5ff",
+          border: "1px solid transparent",
           borderRadius: 12,
           padding: 24,
           cursor: "pointer",
@@ -36,18 +38,26 @@ const HackathonCard = memo(function HackathonCard({
           flexDirection: "column",
           gap: 14,
           height: "100%",
-          transition: "transform 0.2s",
+          transition: "transform 0.2s, border-color 0.2s",
         }}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.transform = "translateY(-2px)"; }}
-        onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.transform = ""; }}
+        onMouseEnter={(e) => {
+          const el = e.currentTarget as HTMLDivElement;
+          el.style.transform = "translateY(-2px)";
+          el.style.borderColor = "var(--brand-primary, #7c3aed)";
+        }}
+        onMouseLeave={(e) => {
+          const el = e.currentTarget as HTMLDivElement;
+          el.style.transform = "";
+          el.style.borderColor = "transparent";
+        }}
       >
         {/* 상단 섹션: 배지+날짜 행 + 제목 */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1 }}>
           {/* 배지 행 */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 15 }}>
-              <StatusBadge status={h.status} variant="card" />
-              {h.status !== "ended" && (
+              <StatusBadge status={status} variant="card" />
+              {status !== "ended" && (
                 <span style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.224px", color: "var(--text-main, #12121a)" }}>
                   {dday}
                 </span>
@@ -83,15 +93,15 @@ const HackathonCard = memo(function HackathonCard({
             ))}
           </div>
 
-          <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
+          <div className="hackathon-card-bottom">
             {h.maxPrizeKRW ? (
-              <span style={{ fontSize: 20, fontWeight: 800, lineHeight: "30px", color: "#4b0082" }}>
+              <span className="hackathon-card-prize" style={{ fontSize: 20, fontWeight: 800, lineHeight: "30px", color: "#4b0082" }}>
                 {formatPrize(h.maxPrizeKRW)}
               </span>
             ) : (
               <span style={{ fontSize: 13, color: "#6b6b80" }}>상금 미정</span>
             )}
-            <div style={{ fontSize: 12, color: "#6b6b80", textAlign: "right", lineHeight: "19px" }}>
+            <div className="hackathon-card-date" style={{ fontSize: 12, color: "#6b6b80", textAlign: "right", lineHeight: "19px" }}>
               <div>시작 {formatDateKo(h.period.startAt)}</div>
               <div>마감 {formatDateKo(h.period.submissionDeadlineAt)}</div>
             </div>

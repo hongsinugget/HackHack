@@ -50,14 +50,21 @@ export const TeamSchema = z.object({
   name: z.string(),
   isOpen: z.boolean(),
   memberCount: z.number(),
-  maxMembers: z.number(),
-  members: z.array(z.string()),
-  leader: z.string(),
+  // 구버전 localStorage에 없을 수 있는 필드 — default로 마이그레이션
+  maxMembers: z.number().default(5),
+  members: z.array(z.string()).default([]),
+  leader: z.string().default(""),
   lookingFor: z.array(z.string()),
   intro: z.string(),
   contact: z.object({
     type: z.string(),
-    url: safeUrl,
+    // "#" / "" 플레이스홀더 허용, javascript:/data: URI만 차단
+    url: z.string()
+      .refine(
+        (u) => u === "" || u === "#" || u.startsWith("http://") || u.startsWith("https://"),
+        { message: "URL은 http(s)://로 시작해야 합니다" }
+      )
+      .catch(""),   // 마이그레이션: 구버전 잘못된 URL → "" 로 대체
   }),
   createdAt: z.string(),
   joinRequests: z.array(JoinRequestSchema).optional(),

@@ -172,3 +172,184 @@ body {
   background: rgba(167, 139, 250, 0.1);
   color: #7c51fa;
 }
+
+/* ── 해커톤 카드 그리드 반응형 ── */
+.hackathon-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+.hackathon-card-bottom {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+@media (max-width: 480px) {
+  .hackathon-card-grid {
+    grid-template-columns: 1fr;
+  }
+  .hackathon-card-bottom {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .hackathon-card-prize {
+    font-size: 17px !important;
+    line-height: 26px !important;
+  }
+  .hackathon-card-date {
+    text-align: left !important;
+  }
+}
+
+/* ── 홈 2-column 반응형 레이아웃 ── */
+.home-2col {
+  display: flex;
+  gap: 38px;
+  align-items: flex-start;
+}
+
+@media (max-width: 768px) {
+  .home-2col {
+    flex-direction: column;
+    gap: 2.5rem;
+  }
+  .home-left-col,
+  .home-right-col {
+    flex: unset !important;
+    width: 100% !important;
+  }
+  .community-section {
+    width: 100% !important;
+  }
+}
+
+/* ── Navbar 링크 hover 애니메이션 ── */
+.nav-link-item {
+  color: var(--text-subtle, #4b5563);
+  transition: color 0.18s ease;
+}
+.nav-link-item:hover,
+.nav-link-item[data-active="true"] {
+  color: var(--brand-primary, #7c3aed);
+}
+
+.nav-mobile-link {
+  color: var(--text-main, #12121a);
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.nav-mobile-link:hover,
+.nav-mobile-link[data-active="true"] {
+  color: var(--brand-primary, #7c3aed);
+}
+
+.nav-icon-link {
+  color: var(--text-subtle, #4b5563);
+  transition: color 0.15s ease;
+}
+.nav-icon-link:hover,
+.nav-icon-link[data-active="true"] {
+  color: var(--brand-primary, #7c3aed);
+}
+
+/* ── Navbar 반응형 ── */
+@media (max-width: 768px) {
+  .nav-container     { padding: 0 1rem !important; }
+  .nav-links-desktop { display: none !important; }
+  .nav-right-desktop { display: none !important; }
+  .nav-hamburger     { display: flex !important; }
+  .nav-search-mobile { display: flex !important; }
+}
+
+/* ── Footer Banner 반응형 ── */
+.footer-banner {
+  background: var(--bg-dark, #12121a);
+  padding: 22px 77px 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 2rem;
+}
+.footer-text-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-bottom: 22px;
+  align-self: center;
+}
+.footer-small-text {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-light, #f0f2f5);
+}
+.footer-big-text {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 30px;
+  color: #ffffff;
+}
+.footer-char-img {
+  height: 140px;
+  width: auto;
+  object-fit: contain;
+  object-position: bottom;
+  flex-shrink: 0;
+  display: block;
+}
+.footer-cta-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  background: var(--text-light, #f0f2f5);
+  color: var(--brand-primary, #7c3aed);
+  text-decoration: none;
+  flex-shrink: 0;
+  white-space: nowrap;
+  transition: opacity 0.15s;
+  align-self: center;
+  margin-bottom: 22px;
+}
+.footer-cta-link:hover { opacity: 0.85; }
+
+@media (max-width: 768px) {
+  .footer-banner {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+    padding: 16px 20px 0;
+    gap: 0;
+    align-items: end;
+  }
+  .footer-text-block {
+    grid-column: 1;
+    grid-row: 1;
+    padding-bottom: 10px;
+    align-self: end;
+  }
+  .footer-small-text { font-size: 11px !important; }
+  .footer-big-text   { font-size: 15px !important; line-height: 22px !important; }
+  .footer-char-img {
+    grid-column: 2;
+    grid-row: 1 / 3;
+    height: 90px !important;
+    width: auto !important;
+    align-self: flex-end;
+    margin-left: 12px;
+  }
+  .footer-cta-link {
+    grid-column: 1;
+    grid-row: 2;
+    margin-bottom: 16px;
+    align-self: start;
+    justify-self: start;
+    font-size: 13px;
+    padding: 8px 20px;
+  }
+}

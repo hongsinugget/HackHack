@@ -13,10 +13,18 @@ const TeamCard = memo(function TeamCard({ team }: { team: Team }) {
         display: "flex",
         flexDirection: "column",
         gap: 12,
-        transition: "transform 0.2s",
+        transition: "transform 0.2s, border-color 0.2s",
       }}
-      onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.transform = "translateY(-2px)"; }}
-      onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.transform = ""; }}
+      onMouseEnter={(e) => {
+        const el = e.currentTarget as HTMLDivElement;
+        el.style.transform = "translateY(-2px)";
+        el.style.borderColor = "var(--brand-primary, #7c3aed)";
+      }}
+      onMouseLeave={(e) => {
+        const el = e.currentTarget as HTMLDivElement;
+        el.style.transform = "";
+        el.style.borderColor = "var(--border-subtle, #dde1e6)";
+      }}
     >
       {/* Row 1: 팀명 */}
       <div style={{ fontWeight: 700, fontSize: 16, lineHeight: "24px", color: "var(--text-main, #12121a)" }}>

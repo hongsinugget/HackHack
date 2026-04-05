@@ -22,7 +22,7 @@ export default function HackathonPreview({ hackathons }: { hackathons: Hackathon
         </Link>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "1rem" }}>
+      <div className="hackathon-card-grid">
         {sorted.map((h) => (
           <HackathonCard key={h.slug} h={h} maxTags={3} />
         ))}

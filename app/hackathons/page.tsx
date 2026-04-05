@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useStore } from "@/lib/store";
 import type { HackathonStatus } from "@/lib/types";
+import { computeStatus } from "@/lib/utils";
 import HackathonCard from "@/components/HackathonCard";
 
 const STATUS_OPTIONS: { label: string; value: HackathonStatus | "all" }[] = [
@@ -61,11 +62,17 @@ function HackathonsContent() {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
+    const now = new Date();
     return hackathons
       .filter((h) => !q || h.title.toLowerCase().includes(q) || h.tags.some((t) => t.toLowerCase().includes(q)))
-      .filter((h) => statusFilter === "all" || h.status === statusFilter)
+      .filter((h) => statusFilter === "all" || computeStatus(h.period) === statusFilter)
       .filter((h) => !tagFilter || h.tags.includes(tagFilter))
-      .filter((h) => statusFilter === "ended" || h.status !== "ended")
+      .filter((h) => {
+        if (sort !== "deadline") return true;
+        const deadline = new Date(h.period.submissionDeadlineAt);
+        const diffDays = (deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
+        return diffDays >= 0 && diffDays <= 7;
+      })
       .sort((a, b) => {
         if (sort === "prize") return (b.maxPrizeKRW ?? 0) - (a.maxPrizeKRW ?? 0);
         return new Date(a.period.submissionDeadlineAt).getTime() - new Date(b.period.submissionDeadlineAt).getTime();
@@ -80,14 +87,14 @@ function HackathonsContent() {
           해커톤 목록
         </h1>
         <p style={{ fontSize: 13, color: "var(--text-muted, #6b6b80)", margin: 0 }}>
-          상금·일정·팀 현황을 한눈에 비교하고 참가할 대회를 찾아보세요
+          상금·일정 현황을 한눈에 비교하고 참가할 대회를 찾아보세요
         </p>
       </div>
 
       {/* 검색창 */}
       <div style={{ position: "relative", marginBottom: "1rem" }}>
-        <span style={{ position: "absolute", left: "1rem", top: "50%", transform: "translateY(-50%)", fontSize: "1rem", pointerEvents: "none", color: "#6b6b80" }}>
-          🔍
+        <span style={{ position: "absolute", left: "16px", top: "50%", transform: "translateY(-50%)", display: "flex", alignItems: "center", pointerEvents: "none" }}>
+          <img src="/icons/search-icon.svg" alt="" width={16} height={16} />
         </span>
         <input
           value={query}
@@ -95,12 +102,12 @@ function HackathonsContent() {
           placeholder="대회명 또는 태그로 검색..."
           style={{
             width: "100%",
-            padding: "10px 1rem 10px 2.75rem",
+            padding: "12px 16px 12px 44px",
             borderRadius: 10,
-            background: "#ffffff",
+            background: "var(--bg-main, #f0f2f5)",
             border: "1px solid var(--border-subtle, #dde1e6)",
             color: "var(--text-main, #12121a)",
-            fontSize: 14,
+            fontSize: 13,
             outline: "none",
             transition: "border-color 0.15s",
           }}
@@ -126,12 +133,11 @@ function HackathonsContent() {
           alignItems: "center",
           marginBottom: "1.5rem",
           padding: "1rem 1.25rem",
-          background: "#ffffff",
-          borderRadius: 12,
+          borderRadius: 10,
           border: "1px solid var(--border-subtle, #dde1e6)",
         }}
       >
-        {/* 상태 필터 */}
+        {/* 상태 필터 — Container-Button */}
         <div style={{ display: "flex", gap: "0.375rem" }}>
           {STATUS_OPTIONS.map((opt) => (
             <button
@@ -139,12 +145,12 @@ function HackathonsContent() {
               onClick={() => setStatusFilter(opt.value)}
               style={{
                 padding: "6px 12px",
-                borderRadius: 8,
-                fontSize: 13,
+                borderRadius: 6,
+                fontSize: 12.8,
                 fontWeight: statusFilter === opt.value ? 700 : 400,
-                background: statusFilter === opt.value ? "rgba(124,58,237,0.12)" : "transparent",
+                background: statusFilter === opt.value ? "rgba(124,58,237,0.2)" : "transparent",
                 color: statusFilter === opt.value ? "var(--brand-primary, #7c3aed)" : "var(--text-subtle, #4b5563)",
-                border: statusFilter === opt.value ? "1px solid rgba(124,58,237,0.3)" : "1px solid transparent",
+                border: "none",
                 cursor: "pointer",
                 transition: "all 0.15s",
               }}
@@ -154,32 +160,37 @@ function HackathonsContent() {
           ))}
         </div>
 
-        <div style={{ width: 1, height: 20, background: "var(--border-subtle, #dde1e6)" }} />
-
-        {/* 태그 필터 */}
+        {/* 태그 필터 — Container-tag / Container-tag-Pressed */}
         <div style={{ display: "flex", gap: "0.375rem", flexWrap: "wrap" }}>
           {allTags.map((tag) => (
             <button
               key={tag}
               onClick={() => setTagFilter(tagFilter === tag ? null : tag)}
               style={{
-                padding: "4px 10px",
-                borderRadius: 6,
+                padding: "4px 9px",
+                borderRadius: 2,
                 fontSize: 12,
-                fontWeight: tagFilter === tag ? 700 : 400,
-                background: tagFilter === tag ? "rgba(124,58,237,0.15)" : "rgba(124,58,237,0.06)",
-                color: tagFilter === tag ? "var(--brand-primary, #7c3aed)" : "#6b6b80",
-                border: tagFilter === tag ? "1px solid rgba(124,58,237,0.35)" : "1px solid rgba(124,58,237,0.15)",
+                fontWeight: 400,
+                background: tagFilter === tag ? "var(--bg-input, #dee2e6)" : "transparent",
+                color: "var(--text-subtle, #4b5563)",
+                border: tagFilter === tag ? "none" : "1px solid var(--bg-input, #dee2e6)",
                 cursor: "pointer",
                 transition: "all 0.15s",
+                letterSpacing: "0.224px",
               }}
             >
               {tag}
             </button>
           ))}
         </div>
+      </div>
 
-        <div style={{ marginLeft: "auto" }}>
+      {/* 결과 수 + 정렬 */}
+      {initialized && (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
+          <span style={{ fontSize: 13, color: "var(--text-muted, #6b6b80)" }}>
+            {filtered.length}개 해커톤
+          </span>
           <select
             value={sort}
             onChange={(e) => setSort(e.target.value as "prize" | "deadline")}
@@ -199,13 +210,6 @@ function HackathonsContent() {
             ))}
           </select>
         </div>
-      </div>
-
-      {/* 결과 수 */}
-      {initialized && (
-        <div style={{ fontSize: 13, color: "var(--text-muted, #6b6b80)", marginBottom: "1rem" }}>
-          {filtered.length}개 해커톤
-        </div>
       )}
 
       {/* 카드 그리드 */}
@@ -218,30 +222,34 @@ function HackathonsContent() {
           style={{
             textAlign: "center",
             padding: "4rem 2rem",
-            background: "#ffffff",
+            background: "var(--bg-main, #f0f2f5)",
             borderRadius: 12,
-            border: "1px solid var(--border-subtle, #dde1e6)",
           }}
         >
-          <div style={{ fontSize: "2rem", marginBottom: "0.75rem" }}>🔍</div>
-          <div style={{ fontWeight: 700, marginBottom: "0.375rem", color: "var(--text-main, #12121a)" }}>조건에 맞는 해커톤이 없습니다</div>
-          <div style={{ fontSize: 13, color: "var(--text-muted, #6b6b80)" }}>필터를 조정해보세요</div>
-          <button
-            onClick={() => { setQuery(""); setStatusFilter("all"); setTagFilter(null); }}
-            style={{
-              marginTop: "1rem",
-              padding: "8px 16px",
-              borderRadius: 8,
-              fontSize: 13,
-              background: "rgba(124,58,237,0.12)",
-              color: "var(--brand-primary, #7c3aed)",
-              border: "1px solid rgba(124,58,237,0.3)",
-              cursor: "pointer",
-              fontWeight: 600,
-            }}
-          >
-            필터 초기화
-          </button>
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: "0.75rem" }}>
+            <img src="/icons/search-icon.svg" alt="" width={32} height={32} style={{ opacity: 0.4 }} />
+          </div>
+          <div style={{ fontWeight: 700, marginBottom: "0.375rem", color: "var(--text-main, #12121a)" }}>
+            {tagFilter ? `'${tagFilter}' 태그에 맞는 해커톤이 없어요` : "조건에 맞는 해커톤이 없어요"}
+          </div>
+          <div style={{ display: "flex", gap: "0.5rem", justifyContent: "center", marginTop: "1rem", flexWrap: "wrap" }}>
+            {tagFilter && (
+              <button
+                onClick={() => setTagFilter(null)}
+                style={{ padding: "6px 14px", borderRadius: 8, fontSize: 13, background: "rgba(124,58,237,0.12)", color: "var(--brand-primary, #7c3aed)", border: "none", cursor: "pointer", fontWeight: 600 }}
+              >
+                '{tagFilter}' 태그 해제
+              </button>
+            )}
+            {query && (
+              <button
+                onClick={() => setQuery("")}
+                style={{ padding: "6px 14px", borderRadius: 8, fontSize: 13, background: "rgba(124,58,237,0.12)", color: "var(--brand-primary, #7c3aed)", border: "none", cursor: "pointer", fontWeight: 600 }}
+              >
+                검색어 지우기
+              </button>
+            )}
+          </div>
         </div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "1rem" }}>

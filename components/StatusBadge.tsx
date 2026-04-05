@@ -5,6 +5,7 @@ type Props = { status: HackathonStatus; variant?: "default" | "card" };
 
 export default function StatusBadge({ status, variant = "default" }: Props) {
   if (variant === "card") {
+    const isEnded = status === "ended";
     return (
       <span
         style={{
@@ -15,8 +16,8 @@ export default function StatusBadge({ status, variant = "default" }: Props) {
           fontSize: 12,
           fontWeight: 600,
           letterSpacing: "0.224px",
-          background: "#5013ba",
-          color: "var(--text-light, #f0f2f5)",
+          background: isEnded ? "rgba(255,46,99,0.15)" : "#5013ba",
+          color: isEnded ? "#FF2E63" : "var(--text-light, #f0f2f5)",
         }}
       >
         {statusLabel(status)}

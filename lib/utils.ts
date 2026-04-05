@@ -28,3 +28,10 @@ export function statusLabel(status: string): string {
   if (status === "upcoming") return "예정";
   return "종료";
 }
+
+export function computeStatus(period: { startAt: string; submissionDeadlineAt: string }): "ongoing" | "upcoming" | "ended" {
+  const now = new Date();
+  if (now < new Date(period.startAt)) return "upcoming";
+  if (now <= new Date(period.submissionDeadlineAt)) return "ongoing";
+  return "ended";
+}

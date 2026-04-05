@@ -91,7 +91,7 @@ export const seedTeams: Team[] = [
     leader: "",
     lookingFor: ["Backend", "ML Engineer"],
     intro: "추론 최적화/경량화 실험을 함께 진행할 팀원을 찾습니다.",
-    contact: { type: "link", url: "#" },
+    contact: { type: "link", url: "https://hackhack.team" },
     createdAt: "2026-02-20T11:00:00+09:00",
   },
   {
@@ -105,7 +105,7 @@ export const seedTeams: Team[] = [
     leader: "",
     lookingFor: ["Frontend", "Designer"],
     intro: "프롬프트 품질 점수화 + 개선 가이드 UX를 기획합니다.",
-    contact: { type: "link", url: "#" },
+    contact: { type: "link", url: "https://hackhack.team" },
     createdAt: "2026-02-18T18:30:00+09:00",
   },
   {
@@ -119,7 +119,7 @@ export const seedTeams: Team[] = [
     leader: "",
     lookingFor: ["Frontend", "Designer"],
     intro: "명세서 기반으로 기본 기능을 빠르게 완성하고 UX 확장을 노립니다.",
-    contact: { type: "link", url: "#" },
+    contact: { type: "link", url: "https://hackhack.team" },
     createdAt: "2026-03-04T11:00:00+09:00",
   },
   {
@@ -133,7 +133,7 @@ export const seedTeams: Team[] = [
     leader: "",
     lookingFor: [],
     intro: "기획서-구현-문서화를 깔끔하게 맞추는 방향으로 진행합니다.",
-    contact: { type: "link", url: "#" },
+    contact: { type: "link", url: "https://hackhack.team" },
     createdAt: "2026-03-05T09:20:00+09:00",
   },
   {
@@ -147,7 +147,7 @@ export const seedTeams: Team[] = [
     leader: "",
     lookingFor: ["Backend", "PM"],
     intro: "실시간 AI 추천 서비스를 구축하는 팀입니다. 기획·백엔드 합류 환영!",
-    contact: { type: "link", url: "#" },
+    contact: { type: "link", url: "https://hackhack.team" },
     createdAt: "2026-04-01T10:00:00+09:00",
   },
   {
@@ -161,7 +161,7 @@ export const seedTeams: Team[] = [
     leader: "",
     lookingFor: ["Frontend", "Designer", "ML Engineer"],
     intro: "스트리밍 AI 파이프라인 팀. 다양한 직군 모집 중입니다.",
-    contact: { type: "link", url: "#" },
+    contact: { type: "link", url: "https://hackhack.team" },
     createdAt: "2026-04-02T14:30:00+09:00",
   },
 ];
