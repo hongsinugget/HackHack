@@ -52,9 +52,9 @@ export default function NicknameModal() {
       >
         {/* 로고 */}
         <div style={{ display: "flex", justifyContent: "center", marginBottom: "0.5rem" }}>
-          <Image src="/icons/logo.svg" alt="핵핵 로고" width={64} height={64} />
+          <Image src="/icons/logo.svg" alt="핵핵 로고" width={96} height={96} />
         </div>
-        <div style={{ fontSize: "1.5rem", fontWeight: 800, color: "#a78bfa", marginBottom: "0.375rem" }}>
+        <div style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--brand-primary)", marginBottom: "0.375rem" }}>
           핵핵에 오신 걸 환영합니다
         </div>
         <p style={{ fontSize: "0.875rem", color: "var(--muted)", marginBottom: "2rem", lineHeight: 1.6 }}>
