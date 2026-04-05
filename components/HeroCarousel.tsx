@@ -43,6 +43,38 @@ export default function HeroCarousel({ hackathons }: { hackathons: Hackathon[] }
   const [isPlaying, setIsPlaying] = useState(true);
   const [progressKey, setProgressKey] = useState(0);
 
+  /* 버튼 hover/active 상태 — pill 3분할 구조 */
+  const [hoverBtn, setHoverBtn] = useState<string | null>(null);
+  const [activeBtn, setActiveBtn] = useState<string | null>(null);
+  const activeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleBtnClick = useCallback((key: string, action: () => void) => {
+    action();
+    if (activeTimerRef.current) clearTimeout(activeTimerRef.current);
+    setActiveBtn(key);
+    activeTimerRef.current = setTimeout(() => setActiveBtn(null), 150);
+  }, []);
+
+  /* left/right: 기본 투명, hover/click = rgba(0,0,0,0.4) / center: 항상 rgba(0,0,0,0.2) */
+  const getBtnStyle = (key: string): React.CSSProperties => {
+    const isHighlighted = hoverBtn === key || activeBtn === key;
+    const bg = isHighlighted ? "rgba(0,0,0,0.4)" : "rgba(0,0,0,0.2)";
+    const width = key === "play" ? 26 : 25;
+    return {
+      width,
+      height: 32,
+      background: bg,
+      border: "none",
+      cursor: "pointer",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      transition: "background 0.12s ease",
+      flexShrink: 0,
+      padding: 0,
+    };
+  };
+
   useEffect(() => {
     if (!emblaApi) return;
     const onSelect = () => {
@@ -297,36 +329,38 @@ export default function HeroCarousel({ hackathons }: { hackathons: Hackathon[] }
           </div>
         </div>
 
-        {/* 컨트롤 pill */}
+        {/* 컨트롤 pill — 3분할 구조, overflow:hidden으로 pill 형태 유지 */}
         <div
           style={{
             display: "flex",
-            alignItems: "center",
-            background: "rgba(0,0,0,0.2)",
+            alignItems: "stretch",
             borderRadius: 100,
-            padding: "6px 8px",
-            gap: 2,
+            overflow: "hidden",
             flexShrink: 0,
           }}
         >
           <button
-            onClick={scrollPrev}
             aria-label="이전"
-            style={{ width: 24, height: 24, background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+            style={getBtnStyle("prev")}
+            onClick={() => handleBtnClick("prev", scrollPrev)}
+            onMouseEnter={() => setHoverBtn("prev")}
+            onMouseLeave={() => setHoverBtn(null)}
           >
             <img src="/icons/left-icon.svg" alt="" style={{ width: 20, height: 20 }} />
           </button>
           <button
-            onClick={togglePlay}
             aria-label={isPlaying ? "일시정지" : "재생"}
-            style={{ width: 24, height: 24, background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+            style={getBtnStyle("play")}
+            onClick={() => handleBtnClick("play", togglePlay)}
           >
             <img src={isPlaying ? "/icons/pause-icon.svg" : "/icons/ri-play-icon.svg"} alt="" style={{ width: 20, height: 20 }} />
           </button>
           <button
-            onClick={scrollNext}
             aria-label="다음"
-            style={{ width: 24, height: 24, background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+            style={getBtnStyle("next")}
+            onClick={() => handleBtnClick("next", scrollNext)}
+            onMouseEnter={() => setHoverBtn("next")}
+            onMouseLeave={() => setHoverBtn(null)}
           >
             <img src="/icons/right-icon.svg" alt="" style={{ width: 20, height: 20 }} />
           </button>

@@ -142,7 +142,10 @@ function HackathonsContent() {
           {STATUS_OPTIONS.map((opt) => (
             <button
               key={opt.value}
-              onClick={() => setStatusFilter(opt.value)}
+              onClick={() => {
+                setStatusFilter(opt.value);
+                if (opt.value === "all") setTagFilter(null);
+              }}
               style={{
                 padding: "6px 12px",
                 borderRadius: 6,
@@ -162,26 +165,35 @@ function HackathonsContent() {
 
         {/* 태그 필터 — Container-tag / Container-tag-Pressed */}
         <div style={{ display: "flex", gap: "0.375rem", flexWrap: "wrap" }}>
-          {allTags.map((tag) => (
-            <button
-              key={tag}
-              onClick={() => setTagFilter(tagFilter === tag ? null : tag)}
-              style={{
-                padding: "4px 9px",
-                borderRadius: 2,
-                fontSize: 12,
-                fontWeight: 400,
-                background: tagFilter === tag ? "var(--bg-input, #dee2e6)" : "transparent",
-                color: "var(--text-subtle, #4b5563)",
-                border: tagFilter === tag ? "none" : "1px solid var(--bg-input, #dee2e6)",
-                cursor: "pointer",
-                transition: "all 0.15s",
-                letterSpacing: "0.224px",
-              }}
-            >
-              {tag}
-            </button>
-          ))}
+          {allTags.map((tag) => {
+            const isSelected = tagFilter === tag;
+            return (
+              <button
+                key={tag}
+                onClick={() => setTagFilter(isSelected ? null : tag)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4,
+                  padding: "4px 9px",
+                  borderRadius: 2,
+                  fontSize: 12,
+                  fontWeight: isSelected ? 600 : 400,
+                  background: isSelected ? "var(--bg-input, #dee2e6)" : "transparent",
+                  color: isSelected ? "var(--text-main, #12121a)" : "var(--text-subtle, #4b5563)",
+                  border: isSelected ? "none" : "1px solid var(--bg-input, #dee2e6)",
+                  cursor: "pointer",
+                  transition: "all 0.15s",
+                  letterSpacing: "0.224px",
+                }}
+              >
+                {tag}
+                {isSelected && (
+                  <span style={{ fontSize: 10, lineHeight: 1, opacity: 0.6 }}>✕</span>
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
 
