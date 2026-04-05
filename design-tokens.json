@@ -1,0 +1,337 @@
+{
+  "$schema": "https://design-tokens.github.io/community-group/format/",
+  "_source": "Figma DesignSystem page — node 141:5087 (HackHack, fileKey: RfRONAeqiPYhQCaMuE1vl5)",
+  "_note": "Figma 원본은 라이트 테마 기준. 현재 코드의 다크 테마와 다를 수 있음.",
+
+  "color": {
+    "brand": {
+      "primary":   { "value": "#7c3aed", "comment": "var(--brand-primary) — 메인 보라색, 버튼·링크·강조" },
+      "dark":      { "value": "#5013ba", "comment": "StatusBadge 배경, 진한 보라색" },
+      "light":     { "value": "#ece5ff", "comment": "HackathonCard 배경, 연한 보라색" },
+      "hover":     { "value": "#6d28d9", "comment": "brand-primary hover 상태" },
+      "tagPurple": { "value": "#a78bfa", "comment": "캐러셀 태그 텍스트, 연보라" },
+      "teamTag":   { "value": "#7c51fa", "comment": "TeamCard 태그 텍스트" },
+      "secondary": { "value": "#ff2e63", "comment": "HackHack Gauge 열기지수 바 채움색" }
+    },
+    "text": {
+      "main":   { "value": "#12121a", "comment": "var(--text-main) — 기본 텍스트" },
+      "subtle": { "value": "#4b5563", "comment": "var(--text-subtle) — 보조 텍스트, 설명글" },
+      "muted":  { "value": "#6b6b80", "comment": "var(--text-muted) — 흐린 텍스트, 날짜·메타 정보" },
+      "light":  { "value": "#f0f2f5", "comment": "var(--text-light) — 어두운 배경 위 텍스트" },
+      "white":  { "value": "#ffffff", "comment": "완전 흰색 — 버튼 내부 텍스트" }
+    },
+    "bg": {
+      "main":    { "value": "#f0f2f5", "comment": "var(--bg-main) — 페이지 배경 (라이트 테마)" },
+      "dark":    { "value": "#12121a", "comment": "var(--bg-dark) — FooterBanner 전용 다크 배경 (페이지 전체 다크모드 아님)" },
+      "input":   { "value": "#dee2e6", "comment": "var(--bg-input) — 검색바·인풋 배경" },
+      "overlay": {
+        "dark":     { "value": "rgba(0,0,0,0.4)", "comment": "캐러셀 뱃지 배경 오버레이" },
+        "carousel": { "value": "rgba(0,0,0,0.2)", "comment": "캐러셀 컨트롤 배경 오버레이" }
+      }
+    },
+    "border": {
+      "subtle": { "value": "#dde1e6", "comment": "var(--border-subtle) — 카드·구분선 테두리" }
+    },
+    "status": {
+      "ongoing": {
+        "text":   { "value": "#10b981", "comment": "진행중 — 초록 텍스트" },
+        "bg":     { "value": "rgba(16,185,129,0.15)", "comment": "진행중 배지 배경" },
+        "border": { "value": "rgba(16,185,129,0.3)",  "comment": "진행중 배지 테두리" }
+      },
+      "upcoming": {
+        "text":   { "value": "#f59e0b", "comment": "예정 — 주황 텍스트" },
+        "bg":     { "value": "rgba(245,158,11,0.15)", "comment": "예정 배지 배경" },
+        "border": { "value": "rgba(245,158,11,0.3)",  "comment": "예정 배지 테두리" }
+      },
+      "ended": {
+        "text":   { "value": "#ef4444", "comment": "마감/Rush D-3 — 빨간 텍스트" },
+        "bg":     { "value": "rgba(239,68,68,0.15)",  "comment": "마감 배지 배경" },
+        "border": { "value": "rgba(239,68,68,0.3)",   "comment": "마감 배지 테두리" }
+      }
+    },
+    "tag": {
+      "hackathon": {
+        "bg":   { "value": "rgba(124,58,237,0.15)", "comment": "HackathonCard 태그 배경" },
+        "text": { "value": "#12121a",               "comment": "HackathonCard 태그 텍스트" }
+      },
+      "team": {
+        "bg":   { "value": "rgba(167,139,250,0.1)", "comment": "TeamCard 태그 배경" },
+        "text": { "value": "#7c51fa",               "comment": "TeamCard 태그 텍스트" }
+      },
+      "carousel": {
+        "bg":     { "value": "rgba(124,58,237,0.15)", "comment": "캐러셀 태그 배경" },
+        "text":   { "value": "#a78bfa",               "comment": "캐러셀 태그 텍스트" },
+        "border": { "value": "rgba(124,58,237,0.25)", "comment": "캐러셀 태그 테두리" }
+      }
+    },
+    "prize": {
+      "gold":   { "value": "#fbbf24", "comment": "상금 강조색 — 골드" },
+      "indigo": { "value": "#4b0082", "comment": "상금 강조색 — 인디고 (HackathonCard)" }
+    }
+  },
+
+  "typography": {
+    "fontFamily": {
+      "base": {
+        "value": "Pretendard, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        "comment": "Figma 기준 Pretendard. 미설치 시 시스템 폰트 폴백"
+      }
+    },
+    "textStyles": {
+      "display": {
+        "fontSize":     { "value": 24,     "unit": "px" },
+        "fontWeight":   { "value": 800,    "comment": "ExtraBold" },
+        "lineHeight":   { "value": 34,     "unit": "px" },
+        "letterSpacing":{ "value": 0,      "unit": "px" },
+        "comment": "캐러셀 메인 제목, 페이지 최상위 제목"
+      },
+      "titleHeading": {
+        "fontSize":     { "value": 20,     "unit": "px" },
+        "fontWeight":   { "value": 800,    "comment": "ExtraBold" },
+        "lineHeight":   { "value": 30,     "unit": "px" },
+        "letterSpacing":{ "value": 0,      "unit": "px" },
+        "comment": "섹션 제목 (해커톤 목록, 팀 모집 등), 카드 타이틀"
+      },
+      "title": {
+        "fontSize":     { "value": 16,     "unit": "px" },
+        "fontWeight":   { "value": 700,    "comment": "Bold" },
+        "lineHeight":   { "value": 24,     "unit": "px" },
+        "letterSpacing":{ "value": 0,      "unit": "px" },
+        "comment": "TeamCard 팀명, 랭킹 팀명"
+      },
+      "body1": {
+        "fontSize":     { "value": 14,     "unit": "px" },
+        "fontWeight":   { "value": 600,    "comment": "SemiBold" },
+        "lineHeight":   { "value": 20,     "unit": "px" },
+        "letterSpacing":{ "value": 0,      "unit": "px" },
+        "comment": "Navbar 메뉴, 버튼 텍스트 (일반)"
+      },
+      "body2": {
+        "fontSize":     { "value": 13,     "unit": "px" },
+        "fontWeight":   { "value": 400,    "comment": "Regular" },
+        "lineHeight":   { "value": 20,     "unit": "px" },
+        "letterSpacing":{ "value": 0,      "unit": "px" },
+        "comment": "카드 설명글, 섹션 서브타이틀, 검색바 placeholder"
+      },
+      "captionTag": {
+        "fontSize":     { "value": 12,     "unit": "px" },
+        "fontWeight":   { "value": 600,    "comment": "SemiBold" },
+        "lineHeight":   { "value": 16,     "unit": "px" },
+        "letterSpacing":{ "value": 0.224,  "unit": "px" },
+        "comment": "StatusBadge, HackathonTag, 랭킹 순위 텍스트"
+      },
+      "labelSmall": {
+        "fontSize":     { "value": 12,     "unit": "px" },
+        "fontWeight":   { "value": 400,    "comment": "Regular" },
+        "lineHeight":   { "value": 16,     "unit": "px" },
+        "letterSpacing":{ "value": 0.224,  "unit": "px" },
+        "comment": "날짜·메타 정보, 폼 레이블, 캐릭터 수 표시"
+      }
+    }
+  },
+
+  "borderRadius": {
+    "pill": { "value": 9999, "unit": "px", "comment": "StatusBadge, 검색바" },
+    "xl":   { "value": 20,   "unit": "px", "comment": "캐러셀 이미지 프레임" },
+    "lg":   { "value": 16,   "unit": "px", "comment": "HeroCarousel" },
+    "md":   { "value": 12,   "unit": "px", "comment": "카드 (HackathonCard, TeamCard, 랭킹 컨테이너)" },
+    "sm":   { "value": 8,    "unit": "px", "comment": "네비 링크, 버튼(일반), RankingMoreButton, 캐러셀 CTA" },
+    "xs":   { "value": 6,    "unit": "px", "comment": "합류하기 버튼, 캐러셀 내 태그" },
+    "tag":  { "value": 2,    "unit": "px", "comment": "Hackathon-tag, Team-tag" }
+  },
+
+  "component": {
+    "hackathonCard": {
+      "comment": "HackathonCard — node 140:3768",
+      "bg":            { "value": "#ece5ff" },
+      "borderRadius":  { "value": 12, "unit": "px" },
+      "padding":       { "value": 24, "unit": "px", "comment": "전체 padding (top/right/bottom/left)" },
+      "gap": {
+        "sections":    { "value": 14, "unit": "px", "comment": "상단 제목 블록 ↔ 하단 정보 블록" },
+        "header":      { "value": 15, "unit": "px", "comment": "StatusBadge ↔ D-day 텍스트 (4→15 수정)" },
+        "tags":        { "value": 6,  "unit": "px", "comment": "태그들 사이" },
+        "infoSection": { "value": 16, "unit": "px", "comment": "태그 row ↔ 상금/날짜 row" }
+      }
+    },
+
+    "teamCard": {
+      "comment": "TeamCard — node 140:3769",
+      "bg":            { "value": "#f0f2f5" },
+      "borderRadius":  { "value": 12, "unit": "px" },
+      "border":        { "value": "1px solid #dde1e6" },
+      "padding":       { "value": 24, "unit": "px" },
+      "gap": {
+        "sections":    { "value": 12, "unit": "px", "comment": "팀명 ↔ 설명 ↔ 태그 ↔ 하단 row" },
+        "tags":        { "value": 6,  "unit": "px", "comment": "태그들 사이" },
+        "memberCount": { "value": 4,  "unit": "px", "comment": "'팀원' 레이블 ↔ '3/5명' 텍스트" }
+      }
+    },
+
+    "button": {
+      "comment": "button (합류하기) — node 140:3494",
+      "bg":           { "value": "#7c3aed" },
+      "borderRadius": { "value": 6,  "unit": "px" },
+      "paddingY":     { "value": 8,  "unit": "px" },
+      "paddingX":     { "value": 16, "unit": "px" }
+    },
+
+    "statusBadge": {
+      "comment": "StatusBadge — node 140:3498",
+      "borderRadius": { "value": 9999, "unit": "px" },
+      "card": {
+        "paddingY": { "value": 4, "unit": "px", "comment": "카드 변형 상하 padding (2→4 수정)" },
+        "paddingX": { "value": 8, "unit": "px" }
+      },
+      "carousel": {
+        "paddingY": { "value": 3, "unit": "px" },
+        "paddingX": { "value": 9, "unit": "px" }
+      }
+    },
+
+    "hackathonTag": {
+      "comment": "Hackathon-tag — node 140:3493",
+      "borderRadius": { "value": 2, "unit": "px" },
+      "paddingY":     { "value": 6, "unit": "px", "comment": "상하 padding (2→6 수정, globals.css .tag 클래스)" },
+      "paddingX":     { "value": 8, "unit": "px" }
+    },
+
+    "teamTag": {
+      "comment": "team tag — node 140:3556",
+      "borderRadius": { "value": 2, "unit": "px" },
+      "paddingY":     { "value": 4, "unit": "px" },
+      "paddingX":     { "value": 9, "unit": "px" }
+    },
+
+    "navbar": {
+      "comment": "Navbar — node 140:4490",
+      "height":          { "value": 57,   "unit": "px" },
+      "paddingX":        { "value": 57.5, "unit": "px" },
+      "bg":              { "value": "var(--bg-main, #f0f2f5)", "comment": "라이트 테마 페이지 배경과 동일" },
+      "navItems":        { "value": ["홈", "해커톤", "팀 모집", "랭킹", "커뮤니티"], "comment": "네비게이션 탭 목록" },
+      "gap": {
+        "logoToNav":     { "value": 24,   "unit": "px" },
+        "navLinks":      { "value": 4,    "unit": "px" },
+        "rightSection":  { "value": 32,   "unit": "px", "comment": "검색바 ↔ 내팀/프로필 영역" },
+        "myTeamProfile": { "value": 14,   "unit": "px" }
+      },
+      "navLink": {
+        "paddingY":      { "value": 6,    "unit": "px" },
+        "paddingX":      { "value": 11,   "unit": "px" },
+        "borderRadius":  { "value": 8,    "unit": "px", "comment": "inactive 상태" },
+        "activeBorderW": { "value": 2,    "unit": "px", "comment": "active 상태 bottom border" }
+      },
+      "icons": {
+        "logo":    { "value": "/icons/logo.svg",         "comment": "hhack 로고 SVG" },
+        "search":  { "value": "/icons/search-icon.svg",  "comment": "검색 아이콘" },
+        "myTeam":  { "value": "/icons/my-Team-icon.svg", "comment": "내 팀 아이콘" },
+        "profile": { "value": "/icons/Profile.svg",      "comment": "프로필 아이콘" }
+      },
+      "rightLink": {
+        "colorInactive": { "value": "var(--text-subtle, #4b5563)", "comment": "내 팀·프로필 — 비활성(기본) 색상" },
+        "colorActive":   { "value": "#7c3aed", "comment": "내 팀·프로필 — 해당 페이지 진입 시 brand-primary 적용" }
+      }
+    },
+
+    "search": {
+      "comment": "search — node 140:3722",
+      "width":        { "value": 180,  "unit": "px" },
+      "widthHover":   { "value": 220,  "unit": "px", "comment": "hover 시 확장 너비 (클릭/포커스 아님)" },
+      "borderRadius": { "value": 100,  "unit": "px", "comment": "pill 형태" },
+      "bg":           { "value": "#dee2e6" },
+      "paddingY":     { "value": 6,    "unit": "px" },
+      "paddingLeft":  { "value": 32,   "unit": "px", "comment": "아이콘 공간 확보" },
+      "paddingRight": { "value": 12,   "unit": "px" },
+      "iconSize":     { "value": 16,   "unit": "px" },
+      "focusRing":    { "value": "none", "comment": "포커스 링 없음 — hover 확장으로 대체" }
+    },
+
+    "heroCarousel": {
+      "comment": "HeroCarousel — node 142:6857",
+      "borderRadius":    { "value": 16, "unit": "px" },
+      "paddingTop":      { "value": 33, "unit": "px" },
+      "paddingLeft":     { "value": 40, "unit": "px" },
+      "gap": {
+        "titleToLink":   { "value": 38, "unit": "px", "comment": "제목 블록 ↔ CTA 링크" },
+        "titleInner":    { "value": 8,  "unit": "px", "comment": "뱃지 ↔ 제목 ↔ 상금" }
+      },
+      "control": {
+        "paddingX":      { "value": 8,  "unit": "px" },
+        "paddingY":      { "value": 6,  "unit": "px" },
+        "borderRadius":  { "value": 100,"unit": "px" },
+        "bg":            { "value": "rgba(0,0,0,0.2)" }
+      },
+      "badge": {
+        "paddingY":      { "value": 4,  "unit": "px" },
+        "paddingX":      { "value": 8,  "unit": "px" },
+        "borderRadius":  { "value": 9999, "unit": "px" },
+        "bg":            { "value": "rgba(0,0,0,0.4)" }
+      },
+      "ctaLink": {
+        "height":        { "value": 40, "unit": "px" },
+        "borderRadius":  { "value": 8,  "unit": "px" }
+      }
+    },
+
+    "rankingPreview": {
+      "comment": "RankingPreview-Team — node 140:3772. 섹션 제목('랭킹')·전체보기 링크·더보기 버튼 없음.",
+      "gap":            { "value": 16, "unit": "px", "comment": "탭 헤더 ↔ 랭킹 목록" },
+      "containerRadius":{ "value": 12, "unit": "px" },
+      "containerPadding":{ "value": 9, "unit": "px" },
+      "tabs": {
+        "fontSize":     { "value": 20, "unit": "px", "comment": "titleHeading — ExtraBold 800" },
+        "fontWeight":   { "value": 800 },
+        "height":       { "value": 40, "unit": "px" },
+        "activeBorder": { "value": "3px solid #7c3aed", "comment": "활성 탭 하단 border" }
+      },
+      "row": {
+        "gap":          { "value": 16, "unit": "px", "comment": "순위 col ↔ 이름 col ↔ 점수 col" },
+        "innerGap":     { "value": 2,  "unit": "px", "comment": "팀명 ↔ 점수 상세 텍스트" },
+        "borderRadius": { "value": 8,  "unit": "px" },
+        "height":       { "value": 71, "unit": "px", "comment": "각 행 높이 (~71px)" }
+      },
+      "rankColWidth":   { "value": 40, "unit": "px" },
+      "emptyState": {
+        "message": { "value": "개인 랭킹 유저가 없습니다.", "comment": "개인 랭킹 탭에 데이터 없을 때 표시" }
+      }
+    },
+
+    "rankingMoreButton": {
+      "comment": "Ranking/MoreButton — node 140:3499. RankingPreview에서 제거됨 (미사용).",
+      "bg":           { "value": "#dde1e6" },
+      "borderRadius": { "value": 8,  "unit": "px" },
+      "padding":      { "value": 10, "unit": "px" },
+      "width":        { "value": 302,"unit": "px" }
+    },
+
+    "community": {
+      "comment": "community — node 140:3826. '커뮤니티' 제목 하단 보라색 border 제거.",
+      "gap":        { "value": 16, "unit": "px", "comment": "헤더 ↔ 카테고리 탭 ↔ 목록" },
+      "rowHeight":  { "value": 71, "unit": "px" },
+      "rowGap":     { "value": 2,  "unit": "px", "comment": "제목 ↔ 메타 텍스트" },
+      "rowRadius":  { "value": 8,  "unit": "px" },
+      "listRadius": { "value": 12, "unit": "px" },
+      "title": {
+        "border": { "value": "none", "comment": "보라색 하단 선 제거 — 이전: 3px solid brand-primary" }
+      },
+      "meta": {
+        "order": { "value": ["date", "views", "likes"], "comment": "커뮤니티 페이지 목록에서 메타 정보 표시 순서" }
+      }
+    },
+
+    "footerBanner": {
+      "comment": "FooterBanner — 다크 배경(#12121a) 하단 배너",
+      "bg":          { "value": "#12121a" },
+      "paddingY":    { "value": 22, "unit": "px" },
+      "paddingX":    { "value": 77, "unit": "px" },
+      "text": {
+        "subtitle":  { "value": "숨이 찰 만큼 우리는 만들고, 배우고, 결국 성장해요", "comment": "14px Medium" },
+        "heading":   { "value": "핵핵은 그 모든 과정을 연결하는 공간이에요", "comment": "20px ExtraBold" }
+      },
+      "image":       { "value": "/icons/Footer-harry.png", "comment": "푸터 캐릭터 이미지" },
+      "cta": {
+        "label":     { "value": "지금 바로 참여하기" },
+        "href":      { "value": "/hackathons" }
+      }
+    }
+  }
+}

@@ -3,17 +3,14 @@
     "slug": "aimers-8-model-lite",
     "title": "Aimers 8기 : 모델 경량화 온라인 해커톤",
     "status": "ended",
-    "tags": [
-      "LLM",
-      "Compression",
-      "vLLM"
-    ],
+    "tags": ["LLM", "Compression", "vLLM"],
     "thumbnailUrl": "https://example.com/public/img/aimers8.png",
+    "maxPrizeKRW": 5000000,
     "period": {
       "timezone": "Asia/Seoul",
       "startAt": "2026-02-10T10:00:00+09:00",
-      "submissionDeadlineAt": "2026-02-25T10:00:00+09:00",
-      "endAt": "2026-02-26T10:00:00+09:00"
+      "submissionDeadlineAt": "2026-02-25T18:00:00+09:00",
+      "endAt": "2026-02-28T18:00:00+09:00"
     },
     "links": {
       "detail": "/hackathons/aimers-8-model-lite",
@@ -23,19 +20,16 @@
   },
   {
     "slug": "monthly-vibe-coding-2026-02",
-    "title": "월간 해커톤 : 바이브 코딩 개선 AI 아이디어 공모전 (2026.02)",
+    "title": "월간 해커톤 : 바이브 코딩 개선 AI 아이디어 공모전 (2026.04)",
     "status": "ongoing",
-    "tags": [
-      "Idea",
-      "GenAI",
-      "Workflow"
-    ],
-    "thumbnailUrl": "https://example.com/public/img/vibe202602.png",
+    "tags": ["Idea", "GenAI", "Workflow"],
+    "thumbnailUrl": "https://example.com/public/img/vibe202604.png",
+    "maxPrizeKRW": 3000000,
     "period": {
       "timezone": "Asia/Seoul",
-      "startAt": "2026-03-10T10:00:00+09:00",
-      "submissionDeadlineAt": "2026-03-03T10:00:00+09:00",
-      "endAt": "2026-03-09T10:00:00+09:00"
+      "startAt": "2026-03-20T10:00:00+09:00",
+      "submissionDeadlineAt": "2026-04-20T18:00:00+09:00",
+      "endAt": "2026-04-25T18:00:00+09:00"
     },
     "links": {
       "detail": "/hackathons/monthly-vibe-coding-2026-02",
@@ -46,24 +40,58 @@
   {
     "slug": "daker-handover-2026-03",
     "title": "긴급 인수인계 해커톤: 명세서만 보고 구현하라",
-    "status": "upcoming",
-    "tags": [
-      "VibeCoding",
-      "Web",
-      "Vercel",
-      "Handover"
-    ],
+    "status": "ongoing",
+    "tags": ["VibeCoding", "Web", "Vercel", "Handover"],
     "thumbnailUrl": "https://example.com/public/img/daker-handover-202603.png",
+    "maxPrizeKRW": 10000000,
     "period": {
       "timezone": "Asia/Seoul",
       "startAt": "2026-03-15T10:00:00+09:00",
-      "submissionDeadlineAt": "2026-03-30T10:00:00+09:00",
-      "endAt": "2026-04-27T10:00:00+09:00"
+      "submissionDeadlineAt": "2026-04-30T18:00:00+09:00",
+      "endAt": "2026-05-05T18:00:00+09:00"
     },
     "links": {
       "detail": "/hackathons/daker-handover-2026-03",
       "rules": "https://example.com/public/rules/daker-handover-202603",
       "faq": "https://example.com/public/faq/daker-handover-202603"
+    }
+  },
+  {
+    "slug": "next-ai-sprint-2026",
+    "title": "Next AI Sprint 2026: 실시간 AI 서비스 구축",
+    "status": "upcoming",
+    "tags": ["AI", "Realtime", "API"],
+    "thumbnailUrl": "https://example.com/public/img/next-ai-sprint-2026.png",
+    "maxPrizeKRW": 20000000,
+    "period": {
+      "timezone": "Asia/Seoul",
+      "startAt": "2026-05-01T10:00:00+09:00",
+      "submissionDeadlineAt": "2026-05-15T18:00:00+09:00",
+      "endAt": "2026-05-20T18:00:00+09:00"
+    },
+    "links": {
+      "detail": "/hackathons/next-ai-sprint-2026",
+      "rules": "https://example.com/public/rules/next-ai-sprint-2026",
+      "faq": "https://example.com/public/faq/next-ai-sprint-2026"
+    }
+  },
+  {
+    "slug": "open-data-challenge-2026",
+    "title": "공공데이터 활용 오픈 챌린지 2026",
+    "status": "upcoming",
+    "tags": ["OpenData", "Civic", "Visualization"],
+    "thumbnailUrl": "https://example.com/public/img/open-data-2026.png",
+    "maxPrizeKRW": 8000000,
+    "period": {
+      "timezone": "Asia/Seoul",
+      "startAt": "2026-05-10T10:00:00+09:00",
+      "submissionDeadlineAt": "2026-06-01T18:00:00+09:00",
+      "endAt": "2026-06-07T18:00:00+09:00"
+    },
+    "links": {
+      "detail": "/hackathons/open-data-challenge-2026",
+      "rules": "https://example.com/public/rules/open-data-2026",
+      "faq": "https://example.com/public/faq/open-data-2026"
     }
   }
 ]

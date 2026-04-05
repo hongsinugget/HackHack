@@ -18,7 +18,11 @@ function loadOrSeed<T>(key: string, fallback: T[], schema: ZodType<T[]>): T[] {
       const parsed = JSON.parse(raw);
       const result = schema.safeParse(parsed);
       if (result.success) return result.data;
-      console.error(`[store] localStorage "${key}" 스키마 불일치, 시드 데이터로 복구합니다:`, result.error.issues);
+      if (process.env.NODE_ENV !== "production") {
+        console.error(`[store] localStorage "${key}" 스키마 불일치:`, result.error.issues);
+      } else {
+        console.error(`[store] localStorage "${key}" 스키마 불일치, 시드 데이터로 복구합니다`);
+      }
       localStorage.removeItem(key);
     }
   } catch (e) {
@@ -86,7 +90,11 @@ export const useStore = create<StoreState>((set, get) => ({
           if (result.success) {
             profile = result.data;
           } else {
-            console.error("[store] 프로필 스키마 불일치, 초기화합니다:", result.error.issues);
+            if (process.env.NODE_ENV !== "production") {
+            console.error("[store] 프로필 스키마 불일치:", result.error.issues);
+          } else {
+            console.error("[store] 프로필 스키마 불일치, 초기화합니다");
+          }
             localStorage.removeItem(LS_KEYS.profile);
           }
         }
@@ -351,7 +359,7 @@ export const useStore = create<StoreState>((set, get) => ({
     if ((team.joinRequests ?? []).some((r) => r.nickname === profile.nickname)) return;
 
     const newRequest: JoinRequest = {
-      id: Math.random().toString(36).slice(2, 10),
+      id: crypto.randomUUID(),
       nickname: profile.nickname,
       role,
       requestedAt: new Date().toISOString(),

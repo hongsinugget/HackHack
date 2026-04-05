@@ -2,45 +2,45 @@
 
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
+import Image from "next/image";
 import Link from "next/link";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import type { Hackathon } from "@/lib/types";
 import { formatPrize, dDayLabel, isRushMode } from "@/lib/utils";
-import StatusBadge from "./StatusBadge";
 
 const AUTOPLAY_DELAY = 4000;
 
-const GRADIENT_COLORS = [
-  "linear-gradient(135deg, #1a0a2e 0%, #0f0a1a 100%)",
-  "linear-gradient(135deg, #0a1a0f 0%, #051a0a 100%)",
-  "linear-gradient(135deg, #1a1505 0%, #2e2308 100%)",
-  "linear-gradient(135deg, #05091a 0%, #0a102e 100%)",
-];
+/* 슬라이드별 배경 — 사용자 지정: 1=다크그린, 2=블랙, 3=어두운파란 */
+const SLIDE_BG: Record<string, string> = {
+  "monthly-vibe-coding-2026-02": "#084627",
+  "daker-handover-2026-03": "#0a0a0a",
+  "next-ai-sprint-2026": "linear-gradient(162.77deg, #050a1a 0%, #081228 100%)",
+};
+const SLIDE_BG_FALLBACK = "linear-gradient(135deg, #0d0d1a 0%, #10102a 100%)";
 
-const CTRL_BTN: React.CSSProperties = {
-  width: 30,
-  height: 30,
-  borderRadius: 6,
-  background: "rgba(255,255,255,0.1)",
-  border: "1px solid rgba(255,255,255,0.18)",
-  color: "var(--text)",
-  cursor: "pointer",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontSize: "0.8rem",
-  flexShrink: 0,
+/* 슬라이드별 glow 색상 */
+const SLIDE_GLOW: Record<string, string> = {
+  "monthly-vibe-coding-2026-02": "rgba(239,68,68,0.08)",
+  "daker-handover-2026-03": "rgba(239,68,68,0.08)",
+  "next-ai-sprint-2026": "rgba(124,58,237,0.1)",
+};
+
+/* 슬라이드별 콘텐츠 이미지 */
+const SLIDE_IMG: Record<string, string> = {
+  "monthly-vibe-coding-2026-02": "/content/monthly-vibe-coding.png",
+  "daker-handover-2026-03": "/content/daker-handover.png",
+  "next-ai-sprint-2026": "/content/next-ai-sprint.png",
 };
 
 export default function HeroCarousel({ hackathons }: { hackathons: Hackathon[] }) {
   const featured = hackathons.filter((h) => h.status !== "ended");
 
-  const autoplayPlugin = Autoplay({ delay: AUTOPLAY_DELAY, stopOnInteraction: false });
-  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true }, [autoplayPlugin]);
+  /* Autoplay 인스턴스를 ref로 안정화 — 렌더마다 재생성 방지 */
+  const autoplayRef = useRef(Autoplay({ delay: AUTOPLAY_DELAY, stopOnInteraction: false }));
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true }, [autoplayRef.current]);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
-  // progressKey resets the CSS animation on each slide change or play/pause
   const [progressKey, setProgressKey] = useState(0);
 
   useEffect(() => {
@@ -53,21 +53,19 @@ export default function HeroCarousel({ hackathons }: { hackathons: Hackathon[] }
     return () => { emblaApi.off("select", onSelect); };
   }, [emblaApi]);
 
-  const scrollPrev = useCallback(() => {
-    emblaApi?.scrollPrev();
-  }, [emblaApi]);
+  const scrollPrev = useCallback(() => { emblaApi?.scrollPrev(); }, [emblaApi]);
+  const scrollNext = useCallback(() => { emblaApi?.scrollNext(); }, [emblaApi]);
 
-  const scrollNext = useCallback(() => {
-    emblaApi?.scrollNext();
-  }, [emblaApi]);
-
+  /* isPlaying을 deps에서 제거 — setIsPlaying updater로 stale closure 방지 */
   const togglePlay = useCallback(() => {
-    const ap = emblaApi?.plugins()?.autoplay as { play?: () => void; stop?: () => void } | undefined;
-    if (isPlaying) ap?.stop?.();
-    else ap?.play?.();
-    setIsPlaying((p) => !p);
+    setIsPlaying((prev) => {
+      const ap = emblaApi?.plugins()?.autoplay as { play?: () => void; stop?: () => void } | undefined;
+      if (prev) ap?.stop?.();
+      else ap?.play?.();
+      return !prev;
+    });
     setProgressKey((k) => k + 1);
-  }, [emblaApi, isPlaying]);
+  }, [emblaApi]);
 
   if (featured.length === 0) return null;
 
@@ -78,31 +76,35 @@ export default function HeroCarousel({ hackathons }: { hackathons: Hackathon[] }
 
   return (
     <div style={{ position: "relative", borderRadius: 16, overflow: "hidden" }}>
-      {/* Carousel viewport */}
       <div ref={emblaRef} style={{ overflow: "hidden" }}>
         <div style={{ display: "flex" }}>
-          {featured.map((h, i) => {
+          {featured.map((h, idx) => {
             const rush = isRushMode(h.period.submissionDeadlineAt);
             const dday = dDayLabel(h.period.submissionDeadlineAt);
+            const bg = SLIDE_BG[h.slug] ?? SLIDE_BG_FALLBACK;
+            const glow = SLIDE_GLOW[h.slug] ?? "rgba(124,58,237,0.08)";
+            const contentImg = SLIDE_IMG[h.slug];
+
+            /* D-day 배지 텍스트 — 모든 슬라이드 동일 스타일 */
+            const ddayText =
+              dday === "마감" ? "🔥 D-Day 마감" :
+              dday === "D-Day" ? "🔥 마감 D-Day 남음" :
+              rush ? `🔥 마감 ${dday} 남음` : dday;
+
             return (
               <div
                 key={h.slug}
                 style={{
                   flex: "0 0 100%",
                   minWidth: 0,
-                  background: GRADIENT_COLORS[i % GRADIENT_COLORS.length],
-                  border: "1px solid var(--border)",
+                  height: 329,
+                  background: bg,
                   borderRadius: 16,
-                  /* bottom padding leaves room for the fixed control bar */
-                  padding: "2rem 2rem 4.5rem",
                   position: "relative",
                   overflow: "hidden",
-                  display: "flex",
-                  gap: "1.5rem",
-                  alignItems: "center",
                 }}
               >
-                {/* Background glow */}
+                {/* 배경 glow */}
                 <div
                   style={{
                     position: "absolute",
@@ -111,107 +113,131 @@ export default function HeroCarousel({ hackathons }: { hackathons: Hackathon[] }
                     width: 300,
                     height: 300,
                     borderRadius: "50%",
-                    background: rush ? "rgba(239,68,68,0.08)" : "rgba(124,58,237,0.08)",
+                    background: glow,
                     filter: "blur(60px)",
                     pointerEvents: "none",
                   }}
                 />
 
-                {/* Left: text content */}
-                <div style={{ flex: 1, minWidth: 0, position: "relative" }}>
-                  <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "0.75rem", flexWrap: "wrap" }}>
-                    <StatusBadge status={h.status} />
-                    {rush && (
-                      <span
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "0.25rem",
-                          padding: "2px 8px",
-                          borderRadius: 9999,
-                          fontSize: "0.7rem",
-                          fontWeight: 700,
-                          background: "rgba(239,68,68,0.15)",
-                          color: "#ef4444",
-                          border: "1px solid rgba(239,68,68,0.3)",
-                        }}
-                      >
-                        🔥 마감 {dday} 남음
-                      </span>
-                    )}
-                  </div>
-
-                  <h2
-                    style={{
-                      fontSize: "clamp(1.05rem, 2.5vw, 1.45rem)",
-                      fontWeight: 800,
-                      color: "var(--text)",
-                      marginBottom: "0.5rem",
-                      lineHeight: 1.3,
-                    }}
-                  >
-                    {h.title}
-                  </h2>
-
-                  <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", marginBottom: "1rem" }}>
-                    {h.tags.map((tag) => (
-                      <span key={tag} className="tag">{tag}</span>
-                    ))}
-                  </div>
-
-                  <div style={{ display: "flex", alignItems: "center", gap: "1.75rem", marginBottom: "1.25rem" }}>
-                    {h.maxPrizeKRW && (
-                      <div>
-                        <div style={{ fontSize: "0.68rem", color: "var(--muted)", marginBottom: 2 }}>최대 상금</div>
-                        <div style={{ fontSize: "1.35rem", fontWeight: 800, color: rush ? "#fbbf24" : "#a78bfa" }}>
-                          {formatPrize(h.maxPrizeKRW)}
-                        </div>
-                      </div>
-                    )}
-                    {!rush && (
-                      <div>
-                        <div style={{ fontSize: "0.68rem", color: "var(--muted)", marginBottom: 2 }}>마감까지</div>
-                        <div style={{ fontSize: "1.35rem", fontWeight: 800, color: "var(--text)" }}>{dday}</div>
-                      </div>
-                    )}
-                  </div>
-
-                  <Link
-                    href={h.links.detail}
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "0.375rem",
-                      padding: "0.6rem 1.2rem",
-                      borderRadius: 8,
-                      fontSize: "0.875rem",
-                      fontWeight: 600,
-                      background: rush ? "#ef4444" : "var(--accent)",
-                      color: "#fff",
-                      textDecoration: "none",
-                    }}
-                  >
-                    자세히 보기 →
-                  </Link>
-                </div>
-
-                {/* Right: character image */}
+                {/* 내부 레이아웃 */}
                 <div
-                  className="banner-img-wrap"
                   style={{
-                    width: 180,
-                    flexShrink: 0,
+                    position: "absolute",
+                    left: 40,
+                    top: 33,
+                    right: 40,
                     display: "flex",
                     alignItems: "flex-end",
-                    justifyContent: "center",
-                    alignSelf: "stretch",
+                    justifyContent: "space-between",
+                    gap: 24,
                   }}
                 >
-                  <img
-                    src="/hongsineogget.png"
-                    alt="핵핵 캐릭터"
-                    style={{ width: "100%", height: "auto", objectFit: "contain", display: "block" }}
-                  />
+                  {/* 좌측 콘텐츠 */}
+                  <div
+                    style={{
+                      flex: "1 1 608px",
+                      maxWidth: 608,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 38,
+                    }}
+                  >
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+
+                      {/* HeroCarousel-Badge: D-day만 표시, 상태 배지 없음 */}
+                      <div>
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            padding: "4px 8px",
+                            borderRadius: 9999,
+                            fontSize: 12,
+                            fontWeight: 600,
+                            letterSpacing: "0.224px",
+                            background: "rgba(0,0,0,0.4)",
+                            color: "var(--text-light, #f0f2f5)",
+                          }}
+                        >
+                          {ddayText}
+                        </span>
+                      </div>
+
+                      {/* 제목 */}
+                      <h2
+                        style={{
+                          fontSize: 24,
+                          fontWeight: 800,
+                          lineHeight: "34px",
+                          color: "var(--text-light, #f0f2f5)",
+                          margin: 0,
+                          display: "-webkit-box",
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: "vertical",
+                          overflow: "hidden",
+                        }}
+                      >
+                        {h.title}
+                      </h2>
+
+                      {/* 상금 — 단일 노란색 텍스트 */}
+                      {h.maxPrizeKRW && (
+                        <div style={{ fontSize: 24, fontWeight: 800, lineHeight: "34px", color: "#fbbf24" }}>
+                          상금 최대 {formatPrize(h.maxPrizeKRW)}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* CTA: 배경 없음, 텍스트 + right-icon.svg */}
+                    <Link
+                      href={h.links.detail}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        height: 40,
+                        padding: "10px 0",
+                        borderRadius: 8,
+                        fontSize: 14,
+                        fontWeight: 600,
+                        background: "transparent",
+                        color: "var(--text-light, #f0f2f5)",
+                        textDecoration: "none",
+                        alignSelf: "flex-start",
+                        whiteSpace: "nowrap",
+                        gap: 2,
+                      }}
+                    >
+                      자세히 보기
+                      <img
+                        src="/icons/right-icon.svg"
+                        alt=""
+                        style={{ width: 16, height: 16, display: "block" }}
+                      />
+                    </Link>
+                  </div>
+
+                  {/* 우측 콘텐츠 이미지 329×223, borderRadius:20 */}
+                  {contentImg && (
+                    <div
+                      className="hero-img-wrap"
+                      style={{
+                        width: 329,
+                        height: 223,
+                        flexShrink: 0,
+                        borderRadius: 20,
+                        overflow: "hidden",
+                      }}
+                    >
+                      <Image
+                        src={contentImg}
+                        alt={h.title}
+                        width={329}
+                        height={223}
+                        priority={idx === 0}
+                        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             );
@@ -219,38 +245,38 @@ export default function HeroCarousel({ hackathons }: { hackathons: Hackathon[] }
         </div>
       </div>
 
-      {/* ── Fixed control bar overlay ── */}
+      {/* 하단 컨트롤 바 */}
       <div
         style={{
           position: "absolute",
           bottom: 0,
           left: 0,
           right: 0,
-          padding: "0 1.5rem 1rem",
+          padding: "0 24px 14px",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          background: "linear-gradient(to top, rgba(0,0,0,0.45) 0%, transparent 100%)",
+          background: "linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 100%)",
           zIndex: 10,
         }}
       >
-        {/* Page indicator + progress bar */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem", minWidth: 60 }}>
+        {/* 페이지 번호 + 프로그레스 바 */}
+        <div style={{ display: "flex", alignItems: "center", gap: 6, flex: 1, minWidth: 0, marginRight: 16 }}>
           <span
             style={{
-              fontSize: "0.78rem",
+              fontSize: 13,
               fontWeight: 700,
               color: "rgba(255,255,255,0.75)",
               letterSpacing: "0.08em",
               fontVariantNumeric: "tabular-nums",
+              flexShrink: 0,
             }}
           >
             {pageLabel}
           </span>
-          {/* Progress bar */}
           <div
             style={{
-              width: 60,
+              flex: 1,
               height: 2,
               borderRadius: 2,
               background: "rgba(255,255,255,0.15)",
@@ -264,34 +290,48 @@ export default function HeroCarousel({ hackathons }: { hackathons: Hackathon[] }
                 borderRadius: 2,
                 background: "rgba(255,255,255,0.8)",
                 transformOrigin: "left center",
-                animation: isPlaying
-                  ? `hh-progress ${AUTOPLAY_DELAY}ms linear forwards`
-                  : "none",
+                animation: isPlaying ? `hh-progress ${AUTOPLAY_DELAY}ms linear forwards` : "none",
                 transform: isPlaying ? undefined : "scaleX(0)",
               }}
             />
           </div>
         </div>
 
-        {/* Control buttons */}
-        <div style={{ display: "flex", gap: "0.375rem" }}>
-          <button onClick={scrollPrev} style={CTRL_BTN} aria-label="이전">◁</button>
-          <button onClick={togglePlay} style={CTRL_BTN} aria-label={isPlaying ? "일시정지" : "재생"}>
-            {isPlaying ? "‖" : "▶"}
+        {/* 컨트롤 pill */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            background: "rgba(0,0,0,0.2)",
+            borderRadius: 100,
+            padding: "6px 8px",
+            gap: 2,
+            flexShrink: 0,
+          }}
+        >
+          <button
+            onClick={scrollPrev}
+            aria-label="이전"
+            style={{ width: 24, height: 24, background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+          >
+            <img src="/icons/left-icon.svg" alt="" style={{ width: 20, height: 20 }} />
           </button>
-          <button onClick={scrollNext} style={CTRL_BTN} aria-label="다음">▷</button>
+          <button
+            onClick={togglePlay}
+            aria-label={isPlaying ? "일시정지" : "재생"}
+            style={{ width: 24, height: 24, background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+          >
+            <img src={isPlaying ? "/icons/pause-icon.svg" : "/icons/ri-play-icon.svg"} alt="" style={{ width: 20, height: 20 }} />
+          </button>
+          <button
+            onClick={scrollNext}
+            aria-label="다음"
+            style={{ width: 24, height: 24, background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+          >
+            <img src="/icons/right-icon.svg" alt="" style={{ width: 20, height: 20 }} />
+          </button>
         </div>
       </div>
-
-      <style>{`
-        @keyframes hh-progress {
-          from { transform: scaleX(0); }
-          to   { transform: scaleX(1); }
-        }
-        @media (max-width: 560px) {
-          .banner-img-wrap { display: none !important; }
-        }
-      `}</style>
     </div>
   );
 }

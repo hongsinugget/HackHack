@@ -83,19 +83,7 @@ function TeamCard({
           <span style={{ fontSize: "0.68rem", color: "var(--muted)", marginBottom: "0.375rem", display: "block" }}>🔍 구인중</span>
           <div style={{ display: "flex", gap: "0.375rem", flexWrap: "wrap" }}>
             {team.lookingFor.map((role) => (
-              <span
-                key={role}
-                style={{
-                  fontSize: "0.7rem",
-                  padding: "2px 8px",
-                  borderRadius: 6,
-                  border: `1px solid ${ROLE_COLORS[role] ?? "#6b6b80"}40`,
-                  color: ROLE_COLORS[role] ?? "var(--muted)",
-                  background: `${ROLE_COLORS[role] ?? "#6b6b80"}15`,
-                }}
-              >
-                {role}
-              </span>
+              <span key={role} className="tag-team">{role}</span>
             ))}
           </div>
         </div>

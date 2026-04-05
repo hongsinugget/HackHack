@@ -36,6 +36,9 @@ plan-progress.md
 /*.webp
 /*.gif
 
+# Figma 원본 에셋 디렉터리 (한글 파일명 포함, public/ 에 복사본 존재)
+image/
+
 # OS 파일
 .DS_Store
 .DS_Store?

@@ -1,17 +1,42 @@
-@import "tailwindcss";
-
 :root {
-  --bg: #0a0a0f;
-  --surface: #12121a;
-  --surface2: #1a1a26;
-  --border: #2a2a3a;
-  --text: #e8e8f0;
+  /* ── 레거시 변수 (하위 호환용) — 라이트 테마 기준으로 재매핑 ── */
+  --bg: #f0f2f5;
+  --surface: #ffffff;
+  --surface2: #f8f9fa;
+  --border: #dde1e6;
+  --text: #12121a;
   --muted: #6b6b80;
   --accent: #7c3aed;
   --accent-hover: #6d28d9;
   --green: #10b981;
   --orange: #f59e0b;
   --red: #ef4444;
+
+  /* ── 디자인 토큰 — 라이트 테마 ── */
+  --brand-primary:    #7c3aed;
+  --brand-dark:       #5013ba;
+  --brand-light:      #ece5ff;
+  --brand-hover:      #6d28d9;
+  --brand-tag-purple: #a78bfa;
+  --brand-team-tag:   #7c51fa;
+  --brand-secondary:  #ff2e63;
+
+  --text-main:   #12121a;
+  --text-subtle: #4b5563;
+  --text-muted:  #6b6b80;
+  --text-light:  #f0f2f5;
+  --text-white:  #ffffff;
+
+  --bg-main:    #f0f2f5;
+  --bg-dark:    #12121a;
+  --bg-input:   #dee2e6;
+  --bg-surface: #ffffff;
+
+  --border-subtle: #dde1e6;
+
+  --status-ongoing-text:  #10b981;
+  --status-upcoming-text: #f59e0b;
+  --status-ended-text:    #ef4444;
 }
 
 * {
@@ -30,9 +55,9 @@ body {
   align-items: center;
   padding: 2px 8px;
   border-radius: 9999px;
-  font-size: 0.7rem;
+  font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.224px;
 }
 
 .badge-ongoing {
@@ -48,9 +73,9 @@ body {
 }
 
 .badge-ended {
-  background: rgba(107, 107, 128, 0.15);
-  color: #6b6b80;
-  border: 1px solid rgba(107, 107, 128, 0.3);
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
 .card {
@@ -66,17 +91,84 @@ body {
 }
 
 .section-title {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--text);
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 30px;
+  color: var(--text-main);
 }
 
+/* HackathonTag — node 140:3493 */
 .tag {
   display: inline-flex;
+  align-items: center;
+  padding: 6px 8px;
+  border-radius: 2px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.224px;
+  background: rgba(124, 58, 237, 0.15);
+  color: var(--text-main);
+}
+
+/* CarouselTag — 캐러셀 내 태그 (별도 스펙) */
+.tag-carousel {
+  display: inline-flex;
+  align-items: center;
   padding: 2px 8px;
   border-radius: 6px;
-  font-size: 0.7rem;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.224px;
   background: rgba(124, 58, 237, 0.15);
   color: #a78bfa;
   border: 1px solid rgba(124, 58, 237, 0.25);
+}
+
+/* Button (합류하기) — node 140:3494 */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border-radius: 6px;
+  background: var(--brand-primary);
+  color: var(--text-light);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-primary:hover {
+  background: var(--brand-hover);
+}
+
+/* ── 애니메이션 ── */
+@keyframes hh-progress {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+@media (max-width: 640px) {
+  .hero-img-wrap { display: none !important; }
+}
+
+/* TeamTag — node 140:3556 */
+.tag-team {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 9px;
+  border-radius: 2px;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.224px;
+  background: rgba(167, 139, 250, 0.1);
+  color: #7c51fa;
 }

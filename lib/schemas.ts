@@ -2,6 +2,15 @@ import { z } from "zod";
 
 // ── 공통 ──────────────────────────────────────────────────────────────────────
 
+/** http(s):// 로 시작하는 유효한 URL — javascript: / data: URI 차단 */
+const safeUrl = z
+  .string()
+  .url()
+  .refine(
+    (u) => u.startsWith("http://") || u.startsWith("https://"),
+    { message: "URL은 http(s)://로 시작해야 합니다" }
+  );
+
 const JoinRequestSchema = z.object({
   id: z.string(),
   nickname: z.string(),
@@ -48,7 +57,7 @@ export const TeamSchema = z.object({
   intro: z.string(),
   contact: z.object({
     type: z.string(),
-    url: z.string(),
+    url: safeUrl,
   }),
   createdAt: z.string(),
   joinRequests: z.array(JoinRequestSchema).optional(),
@@ -103,9 +112,9 @@ export const TimelineEventSchema = z.object({
 });
 
 export const ProfileLinksSchema = z.object({
-  github: z.string().optional(),
-  portfolio: z.string().optional(),
-  linkedin: z.string().optional(),
+  github: safeUrl.optional(),
+  portfolio: safeUrl.optional(),
+  linkedin: safeUrl.optional(),
 });
 
 export const ProfileSchema = z.object({

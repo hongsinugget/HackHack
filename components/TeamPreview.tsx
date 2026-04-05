@@ -1,79 +1,71 @@
 import { memo } from "react";
 import Link from "next/link";
 import type { Team } from "@/lib/types";
-import { ROLE_COLORS } from "@/lib/constants";
 
 const TeamCard = memo(function TeamCard({ team }: { team: Team }) {
   return (
-    <div className="card" style={{ padding: "1.25rem" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.625rem" }}>
-        <div>
-          <div style={{ fontWeight: 700, fontSize: "1rem", color: "var(--text)" }}>{team.name}</div>
-        </div>
-        <span
-          style={{
-            fontSize: "0.7rem",
-            color: "#10b981",
-            background: "rgba(16,185,129,0.1)",
-            border: "1px solid rgba(16,185,129,0.25)",
-            padding: "2px 8px",
-            borderRadius: 9999,
-          }}
-        >
-          모집중
-        </span>
+    <div
+      style={{
+        background: "var(--bg-main, #f0f2f5)",
+        border: "1px solid var(--border-subtle, #dde1e6)",
+        borderRadius: 12,
+        padding: 24,
+        display: "flex",
+        flexDirection: "column",
+        gap: 12,
+        transition: "transform 0.2s",
+      }}
+      onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.transform = "translateY(-2px)"; }}
+      onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.transform = ""; }}
+    >
+      {/* Row 1: 팀명 */}
+      <div style={{ fontWeight: 700, fontSize: 16, lineHeight: "24px", color: "var(--text-main, #12121a)" }}>
+        {team.name}
       </div>
 
+      {/* Row 2: 소개 */}
       <p
         style={{
-          fontSize: "0.82rem",
-          color: "var(--muted)",
-          marginBottom: "0.875rem",
-          lineHeight: 1.5,
-          display: "-webkit-box",
-          WebkitLineClamp: 2,
-          WebkitBoxOrient: "vertical",
+          fontSize: 13,
+          color: "#4b5563",
+          margin: 0,
+          lineHeight: "20px",
           overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
         }}
       >
         {team.intro}
       </p>
 
-      <div style={{ marginBottom: "0.75rem" }}>
-        <span style={{ fontSize: "0.68rem", color: "var(--muted)", display: "block", marginBottom: "0.375rem" }}>🔍 구인중</span>
-        <div style={{ display: "flex", gap: "0.375rem", flexWrap: "wrap" }}>
-          {team.lookingFor.map((role) => (
-            <span
-              key={role}
-              style={{
-                fontSize: "0.7rem",
-                padding: "2px 8px",
-                borderRadius: 6,
-                border: `1px solid ${ROLE_COLORS[role] ?? "#6b6b80"}40`,
-                color: ROLE_COLORS[role] ?? "var(--muted)",
-                background: `${ROLE_COLORS[role] ?? "#6b6b80"}15`,
-              }}
-            >
-              {role}
-            </span>
-          ))}
-        </div>
+      {/* Row 3: 태그 */}
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        {team.lookingFor.map((role) => (
+          <span key={role} className="tag-team">{role}</span>
+        ))}
       </div>
 
+      {/* Row 4: 팀원 수 + 합류하기 */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <span style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
-          팀원 {team.memberCount}명
-        </span>
+        <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12 }}>
+          <span style={{ color: "#6b6b80", fontWeight: 400 }}>팀원</span>
+          <span style={{ color: "var(--brand-primary, #7c3aed)", fontWeight: 600, letterSpacing: "0.224px" }}>
+            {team.memberCount}/{team.maxMembers}명
+          </span>
+        </div>
         <Link
           href={team.contact.url}
           style={{
-            fontSize: "0.75rem",
-            color: "#a78bfa",
-            textDecoration: "none",
-            padding: "4px 10px",
-            border: "1px solid rgba(124,58,237,0.3)",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "8px 16px",
             borderRadius: 6,
-            background: "rgba(124,58,237,0.08)",
+            background: "var(--brand-primary, #7c3aed)",
+            color: "var(--text-light, #f0f2f5)",
+            fontSize: 13,
+            fontWeight: 400,
+            textDecoration: "none",
           }}
         >
           합류하기
@@ -88,14 +80,14 @@ export default function TeamPreview({ teams }: { teams: Team[] }) {
 
   return (
     <section>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "1rem" }}>
         <div>
-          <div className="section-title">🤝 팀 모집</div>
-          <div style={{ fontSize: "0.8rem", color: "var(--muted)", marginTop: 2 }}>지금 합류할 수 있는 팀</div>
+          <div className="section-title">팀 모집</div>
+          <div style={{ fontSize: 13, color: "var(--text-muted, #6b6b80)", marginTop: 2 }}>지금 팀원을 구하고 있어요</div>
         </div>
         <Link
           href="/camp"
-          style={{ fontSize: "0.8rem", color: "#a78bfa", textDecoration: "none" }}
+          style={{ fontSize: 13, color: "var(--brand-primary, #7c3aed)", textDecoration: "none", fontWeight: 600 }}
         >
           더 많은 팀 보기 →
         </Link>
