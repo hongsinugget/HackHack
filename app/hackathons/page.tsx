@@ -67,15 +67,9 @@ function HackathonsContent() {
       .filter((h) => !q || h.title.toLowerCase().includes(q) || h.tags.some((t) => t.toLowerCase().includes(q)))
       .filter((h) => statusFilter === "all" || computeStatus(h.period) === statusFilter)
       .filter((h) => !tagFilter || h.tags.includes(tagFilter))
-      .filter((h) => {
-        if (sort !== "deadline") return true;
-        const deadline = new Date(h.period.submissionDeadlineAt);
-        const diffDays = (deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
-        return diffDays >= 0 && diffDays <= 7;
-      })
       .sort((a, b) => {
         if (sort === "prize") return (b.maxPrizeKRW ?? 0) - (a.maxPrizeKRW ?? 0);
-        return new Date(a.period.submissionDeadlineAt).getTime() - new Date(b.period.submissionDeadlineAt).getTime();
+        return Date.parse(a.period.submissionDeadlineAt) - Date.parse(b.period.submissionDeadlineAt);
       });
   }, [hackathons, query, statusFilter, tagFilter, sort]);
 

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
 import type { Leaderboard, LeaderboardEntry, Team } from "@/lib/types";
 
-const MEDAL_COLORS = ["#fbbf24", "#94a3b8", "#b45309"];
+const MEDAL_COLORS = ["var(--brand-primary)", "#94a3b8", "#b45309"];
 const MEDALS = ["🥇", "🥈", "🥉"];
 const PODIUM_HEIGHTS = [140, 100, 80];
 
@@ -76,6 +76,18 @@ function TeamPodium({ entries }: { entries: LeaderboardEntry[] }) {
         const entry = top3[idx];
         if (!entry) return null;
         const isFirst = idx === 0;
+        const isThird = idx === 2;
+        const podiumBg = isFirst
+          ? "linear-gradient(180deg, rgba(124,58,237,0.4) 0%, rgba(124,58,237,0.15) 100%)"
+          : isThird
+          ? "linear-gradient(180deg, rgba(180,83,9,0.35) 0%, rgba(180,83,9,0.12) 100%)"
+          : "linear-gradient(180deg, rgba(107,107,128,0.2) 0%, rgba(107,107,128,0.08) 100%)";
+        const podiumBorder = isFirst
+          ? "1px solid rgba(124,58,237,0.4)"
+          : isThird
+          ? "1px solid rgba(180,83,9,0.4)"
+          : "1px solid var(--border)";
+        const podiumColor = isFirst ? "#a78bfa" : isThird ? "#b45309" : "var(--muted)";
         return (
           <div key={entry.rank} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.75rem", flex: 1, maxWidth: 200 }}>
             <div style={{ textAlign: "center" }}>
@@ -87,7 +99,7 @@ function TeamPodium({ entries }: { entries: LeaderboardEntry[] }) {
                 {entry.score < 1 ? entry.score.toFixed(4) : entry.score.toFixed(1)}
               </div>
             </div>
-            <div style={{ width: "100%", height: PODIUM_HEIGHTS[idx], borderRadius: "8px 8px 0 0", background: isFirst ? "linear-gradient(180deg, rgba(124,58,237,0.4) 0%, rgba(124,58,237,0.15) 100%)" : "linear-gradient(180deg, rgba(107,107,128,0.2) 0%, rgba(107,107,128,0.08) 100%)", border: isFirst ? "1px solid rgba(124,58,237,0.4)" : "1px solid var(--border)", borderBottom: "none", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.5rem", fontWeight: 800, color: isFirst ? "#a78bfa" : "var(--muted)" }}>
+            <div style={{ width: "100%", height: PODIUM_HEIGHTS[idx], borderRadius: "8px 8px 0 0", background: podiumBg, border: podiumBorder, borderBottom: "none", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.5rem", fontWeight: 800, color: podiumColor }}>
               {entry.rank}
             </div>
           </div>
@@ -110,7 +122,6 @@ function UserPodium({ entries }: { entries: UserRankEntry[] }) {
         return (
           <div key={entry.nickname} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.75rem", flex: 1, maxWidth: 200 }}>
             <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: isFirst ? "2rem" : "1.5rem" }}>{MEDALS[idx]}</div>
               <div style={{ fontWeight: 800, fontSize: isFirst ? "1rem" : "0.9rem", color: "var(--text)", marginTop: "0.25rem", maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {entry.nickname}
               </div>
@@ -135,27 +146,40 @@ function TeamTable({ entries }: { entries: LeaderboardEntry[] }) {
       <div style={{ display: "grid", gridTemplateColumns: "48px 1fr 120px 120px", padding: "0.75rem 1.25rem", fontSize: "0.75rem", color: "var(--muted)", fontWeight: 600, borderBottom: "1px solid var(--border)", letterSpacing: "0.04em" }}>
         <div>순위</div><div>팀명</div><div style={{ textAlign: "right" }}>점수</div><div style={{ textAlign: "right" }}>제출일</div>
       </div>
-      {entries.map((entry, idx) => (
-        <div key={entry.rank} style={{ display: "grid", gridTemplateColumns: "48px 1fr 120px 120px", padding: "1rem 1.25rem", alignItems: "center", background: entry.rank <= 3 ? `rgba(124,58,237,${0.06 - idx * 0.01})` : "transparent", borderBottom: idx < entries.length - 1 ? "1px solid var(--border)" : "none" }}>
-          <div style={{ fontSize: "0.95rem", fontWeight: 700, color: idx < 3 ? MEDAL_COLORS[idx] : "var(--muted)" }}>
-            {idx < 3 ? MEDALS[idx] : `#${entry.rank}`}
+      {entries.map((entry, i) => {
+        const is1st = i === 0;
+        const rankColor = is1st ? "var(--brand-primary)" : "var(--text-main)";
+        return (
+          <div
+            key={entry.rank}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 16,
+              padding: "0.875rem 1.25rem",
+              borderBottom: i < entries.length - 1 ? "1px solid var(--border)" : "none",
+            }}
+          >
+            <div style={{ width: 40, flexShrink: 0, fontSize: 12, fontWeight: 600, letterSpacing: "0.224px", lineHeight: "16px", color: rankColor }}>
+              {entry.rank}위
+            </div>
+            <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
+              <div style={{ fontSize: 16, fontWeight: 700, lineHeight: "24px", color: rankColor, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{entry.teamName}</div>
+              {entry.scoreBreakdown && (
+                <div style={{ fontSize: 12, fontWeight: 400, lineHeight: "16px", letterSpacing: "0.224px", color: "var(--text-muted)" }}>
+                  참가자 {entry.scoreBreakdown.participant.toFixed(1)} · 심사위원 {entry.scoreBreakdown.judge.toFixed(1)}
+                </div>
+              )}
+            </div>
+            <div style={{ fontSize: 16, fontWeight: 700, lineHeight: "24px", color: "var(--brand-primary)", flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>
+              {entry.score < 1 && entry.score > 0 ? entry.score.toFixed(4) : entry.score.toFixed(1)}
+            </div>
+            <div style={{ fontSize: 12, color: "var(--text-muted)", whiteSpace: "nowrap", letterSpacing: "0.224px" }}>
+              {new Date(entry.submittedAt).toLocaleDateString("ko-KR", { month: "short", day: "numeric" })}
+            </div>
           </div>
-          <div>
-            <div style={{ fontWeight: 600, fontSize: "0.95rem" }}>{entry.teamName}</div>
-            {entry.scoreBreakdown && (
-              <div style={{ fontSize: "0.72rem", color: "var(--muted)", marginTop: 2 }}>
-                참가자 {entry.scoreBreakdown.participant} · 심사위원 {entry.scoreBreakdown.judge}
-              </div>
-            )}
-          </div>
-          <div style={{ textAlign: "right", fontWeight: 800, color: idx === 0 ? "#a78bfa" : "var(--text)" }}>
-            {entry.score < 1 ? entry.score.toFixed(4) : entry.score.toFixed(1)}
-          </div>
-          <div style={{ textAlign: "right", fontSize: "0.75rem", color: "var(--muted)" }}>
-            {new Date(entry.submittedAt).toLocaleDateString("ko-KR")}
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -163,14 +187,14 @@ function TeamTable({ entries }: { entries: LeaderboardEntry[] }) {
 // ── 개인 순위표 ──────────────────────────────────────
 function UserTable({ entries }: { entries: UserRankEntry[] }) {
   return (
-    <div className="card" style={{ overflow: "hidden" }}>
+    <div style={{ overflow: "hidden" }}>
       <div style={{ display: "grid", gridTemplateColumns: "48px 1fr 100px 80px", padding: "0.75rem 1.25rem", fontSize: "0.75rem", color: "var(--muted)", fontWeight: 600, borderBottom: "1px solid var(--border)", letterSpacing: "0.04em" }}>
         <div>순위</div><div>닉네임</div><div style={{ textAlign: "right" }}>누적 점수</div><div style={{ textAlign: "right" }}>참가 수</div>
       </div>
       {entries.map((entry, idx) => (
-        <div key={entry.nickname} style={{ display: "grid", gridTemplateColumns: "48px 1fr 100px 80px", padding: "1rem 1.25rem", alignItems: "center", background: idx < 3 ? `rgba(124,58,237,${0.06 - idx * 0.01})` : "transparent", borderBottom: idx < entries.length - 1 ? "1px solid var(--border)" : "none" }}>
+        <div key={entry.nickname} style={{ display: "grid", gridTemplateColumns: "48px 1fr 100px 80px", padding: "1rem 1.25rem", alignItems: "center", background: "transparent", borderBottom: idx < entries.length - 1 ? "1px solid var(--border)" : "none" }}>
           <div style={{ fontSize: "0.95rem", fontWeight: 700, color: idx < 3 ? MEDAL_COLORS[idx] : "var(--muted)" }}>
-            {idx < 3 ? MEDALS[idx] : `#${entry.rank}`}
+            #{entry.rank}
           </div>
           <div>
             <div style={{ fontWeight: 700, fontSize: "0.95rem" }}>{entry.nickname}</div>
@@ -194,7 +218,10 @@ function UserTable({ entries }: { entries: UserRankEntry[] }) {
 
 // ── 메인 페이지 ──────────────────────────────────────
 export default function RankingsPage() {
-  const { leaderboards, hackathons, teams, initialized } = useStore();
+  const leaderboards = useStore((s) => s.leaderboards);
+  const hackathons = useStore((s) => s.hackathons);
+  const teams = useStore((s) => s.teams);
+  const initialized = useStore((s) => s.initialized);
   const [rankingMode, setRankingMode] = useState<"user" | "team">("user");
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const [period, setPeriod] = useState<"all" | "30d" | "7d">("all");
@@ -210,13 +237,13 @@ export default function RankingsPage() {
 
   const currentBoard = leaderboards.find((b) => b.hackathonSlug === selectedSlug);
 
-  const filteredTeamEntries = (() => {
+  const filteredTeamEntries = useMemo(() => {
     if (!currentBoard) return [];
     if (period === "all") return currentBoard.entries;
     const days = period === "7d" ? 7 : 30;
     const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
     return currentBoard.entries.filter((e) => new Date(e.submittedAt) >= cutoff);
-  })();
+  }, [currentBoard, period]);
 
   const userEntries = useMemo(
     () => computeUserRanking(leaderboards, teams, period),
@@ -237,7 +264,7 @@ export default function RankingsPage() {
 
       {/* 개인/팀별 모드 탭 */}
       <div style={{ display: "flex", gap: "0.375rem", marginBottom: "1.5rem", background: "var(--surface)", borderRadius: 10, padding: "0.25rem", border: "1px solid var(--border)", width: "fit-content" }}>
-        {([["user", "👤 개인 랭킹"], ["team", "👥 팀별 랭킹"]] as const).map(([mode, label]) => (
+        {([["user", "개인 랭킹"], ["team", "팀별 랭킹"]] as const).map(([mode, label]) => (
           <button
             key={mode}
             onClick={() => setRankingMode(mode)}
@@ -256,18 +283,17 @@ export default function RankingsPage() {
 
       {/* 팀별 모드: 해커톤 선택 탭 */}
       {rankingMode === "team" && initialized && leaderboards.length > 1 && (
-        <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1.5rem", overflowX: "auto", paddingBottom: "0.25rem" }}>
+        <div style={{ display: "flex", gap: "0.375rem", marginBottom: "1.5rem", overflowX: "auto", paddingBottom: "0.25rem", flexWrap: "wrap" }}>
           {leaderboards.map((board) => (
             <button
               key={board.hackathonSlug}
               onClick={() => setSelectedSlug(board.hackathonSlug)}
               style={{
-                padding: "0.5rem 1rem", borderRadius: 8, fontSize: "0.8rem",
+                padding: "6px 12px", borderRadius: 6, fontSize: 12.8,
                 fontWeight: selectedSlug === board.hackathonSlug ? 700 : 400,
-                background: selectedSlug === board.hackathonSlug ? "rgba(124,58,237,0.2)" : "var(--surface)",
-                color: selectedSlug === board.hackathonSlug ? "#a78bfa" : "var(--muted)",
-                border: selectedSlug === board.hackathonSlug ? "1px solid rgba(124,58,237,0.4)" : "1px solid var(--border)",
-                cursor: "pointer", whiteSpace: "nowrap", transition: "all 0.15s",
+                background: selectedSlug === board.hackathonSlug ? "rgba(124,58,237,0.2)" : "transparent",
+                color: selectedSlug === board.hackathonSlug ? "var(--brand-primary, #7c3aed)" : "var(--text-subtle, #4b5563)",
+                border: "none", cursor: "pointer", whiteSpace: "nowrap", transition: "all 0.15s",
               }}
             >
               {getTitle(board.hackathonSlug).slice(0, 20)}…
@@ -279,16 +305,16 @@ export default function RankingsPage() {
       {/* 기간 필터 */}
       {initialized && (
         <div style={{ display: "flex", gap: "0.375rem", marginBottom: "1.5rem" }}>
-          {(["all", "30d", "7d"] as const).map((p) => (
+          {(["all", "7d", "30d"] as const).map((p) => (
             <button
               key={p}
               onClick={() => setPeriod(p)}
               style={{
                 padding: "0.4rem 0.875rem", borderRadius: 8, fontSize: "0.8rem",
                 fontWeight: period === p ? 700 : 400,
-                background: period === p ? "rgba(124,58,237,0.18)" : "var(--surface)",
-                color: period === p ? "#a78bfa" : "var(--muted)",
-                border: period === p ? "1px solid rgba(124,58,237,0.35)" : "1px solid var(--border)",
+                background: "transparent",
+                color: period === p ? "var(--brand-primary)" : "var(--muted)",
+                border: "none",
                 cursor: "pointer", transition: "all 0.15s",
               }}
             >
@@ -309,8 +335,7 @@ export default function RankingsPage() {
       ) : rankingMode === "user" ? (
         /* ── 개인 랭킹 뷰 ── */
         userEntries.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "4rem 2rem", background: "var(--surface)", borderRadius: 12, border: "1px solid var(--border)" }}>
-            <div style={{ fontSize: "2rem", marginBottom: "0.75rem" }}>👤</div>
+          <div style={{ textAlign: "center", padding: "4rem 2rem" }}>
             <div style={{ fontWeight: 700, marginBottom: "0.375rem" }}>
               {period !== "all" ? "해당 기간에 집계된 데이터가 없습니다" : "아직 개인 랭킹 데이터가 없습니다"}
             </div>
@@ -325,7 +350,7 @@ export default function RankingsPage() {
               <div style={{ fontWeight: 700, fontSize: "1rem" }}>전체 해커톤 누적 점수</div>
               <div style={{ fontSize: "0.72rem", color: "var(--muted)", marginTop: 2 }}>팀 점수를 팀원 전원에게 동일하게 집계합니다</div>
             </div>
-            {userEntries.length >= 2 && <UserPodium entries={userEntries} />}
+            {userEntries.length >= 3 && <UserPodium entries={userEntries} />}
             <UserTable entries={userEntries} />
           </div>
         )
@@ -333,8 +358,7 @@ export default function RankingsPage() {
       ) : (
         /* ── 팀별 랭킹 뷰 ── */
         !currentBoard || filteredTeamEntries.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "4rem 2rem", background: "var(--surface)", borderRadius: 12, border: "1px solid var(--border)" }}>
-            <div style={{ fontSize: "2rem", marginBottom: "0.75rem" }}>🏁</div>
+          <div style={{ textAlign: "center", padding: "4rem 2rem" }}>
             <div style={{ fontWeight: 700, marginBottom: "0.375rem" }}>
               {currentBoard && period !== "all" ? "해당 기간에 제출된 결과가 없습니다" : "아직 순위 데이터가 없습니다"}
             </div>
@@ -351,13 +375,12 @@ export default function RankingsPage() {
                 업데이트: {new Date(currentBoard.updatedAt).toLocaleString("ko-KR")}
               </div>
             </div>
-            {filteredTeamEntries.length >= 2 && <TeamPodium entries={filteredTeamEntries} />}
+            {filteredTeamEntries.length >= 3 && <TeamPodium entries={filteredTeamEntries} />}
             <TeamTable entries={filteredTeamEntries} />
           </div>
         )
       )}
 
-      <style>{`@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }`}</style>
     </div>
   );
 }

@@ -18,10 +18,6 @@ export interface CommunityPost {
 
 // ─── 컴포넌트 Props ───────────────────────────────────────────────────────────
 
-export interface CommunityPostItemProps {
-  post: CommunityPost;
-  onClick: () => void;
-}
 
 export interface CategoryTabsProps {
   categories: CommunityCategory[];
@@ -32,6 +28,8 @@ export interface CategoryTabsProps {
 export interface PostDetailModalProps {
   post: CommunityPost;
   onClose: () => void;
+  isLiked?: boolean;
+  onLike?: () => void;
 }
 
 export interface CommunitySectionProps {

@@ -7,6 +7,7 @@ import { formatPrize, dDayLabel, computeStatus } from "@/lib/utils";
 import StatusBadge from "./StatusBadge";
 import StarIcon from "./StarIcon";
 import { useStore } from "@/lib/store";
+import { useShallow } from "zustand/shallow";
 
 function formatDateKo(dateStr: string) {
   return new Date(dateStr).toLocaleDateString("ko-KR");
@@ -21,15 +22,19 @@ const HackathonCard = memo(function HackathonCard({
 }) {
   const dday = dDayLabel(h.period.submissionDeadlineAt);
   const status = computeStatus(h.period);
-  const isBookmarked = useStore((s) => s.profile?.bookmarks.includes(h.slug) ?? false);
-  const toggleBookmark = useStore((s) => s.toggleBookmark);
+  const { isBookmarked, toggleBookmark } = useStore(
+    useShallow((s) => ({
+      isBookmarked: s.profile?.bookmarks.includes(h.slug) ?? false,
+      toggleBookmark: s.toggleBookmark,
+    }))
+  );
   const tags = maxTags !== undefined ? h.tags.slice(0, maxTags) : h.tags;
 
   return (
     <Link href={h.links.detail} style={{ textDecoration: "none" }}>
       <div
         style={{
-          background: "#ece5ff",
+          background: status === "ended" ? "#e8e8ed" : "#ece5ff",
           border: "1px solid transparent",
           borderRadius: 12,
           padding: 24,
@@ -89,13 +94,19 @@ const HackathonCard = memo(function HackathonCard({
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
             {tags.map((tag) => (
-              <span key={tag} className="tag">{tag}</span>
+              <span
+                key={tag}
+                className="tag"
+                style={status === "ended" ? { background: "rgba(0,0,0,0.08)", color: "#6b6b80" } : undefined}
+              >
+                {tag}
+              </span>
             ))}
           </div>
 
           <div className="hackathon-card-bottom">
             {h.maxPrizeKRW ? (
-              <span className="hackathon-card-prize" style={{ fontSize: 20, fontWeight: 800, lineHeight: "30px", color: "#4b0082" }}>
+              <span className="hackathon-card-prize" style={{ fontSize: 20, fontWeight: 800, lineHeight: "30px", color: status === "ended" ? "#9a9aab" : "#4b0082" }}>
                 {formatPrize(h.maxPrizeKRW)}
               </span>
             ) : (

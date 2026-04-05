@@ -58,7 +58,6 @@ export default function Navbar() {
   const profile = useStore((s) => s.profile);
   const [searchQuery, setSearchQuery] = useState("");
   const [mounted, setMounted] = useState(false);
-  const [searchHovered, setSearchHovered] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => setMounted(true), []);
@@ -102,7 +101,7 @@ export default function Navbar() {
             <img src="/icons/logo.svg" alt="hhack" style={{ height: 21, width: "auto" }} />
           </Link>
 
-          <div className="nav-links-desktop" style={{ display: "flex", gap: 4, height: 33, alignItems: "flex-start" }}>
+          <div className="nav-links-desktop" style={{ display: "flex", gap: 4, height: 57, alignItems: "stretch" }}>
             {navItems.map((item) => {
               const active = pathname === item.href;
               return (
@@ -115,13 +114,13 @@ export default function Navbar() {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    padding: "6px 11px",
-                    borderRadius: active ? 0 : 8,
+                    padding: "0 11px",
+                    borderRadius: 0,
                     fontSize: 14,
                     fontWeight: active ? 700 : 600,
                     background: "transparent",
                     textDecoration: "none",
-                    borderBottom: active ? "2px solid var(--brand-primary, #7c3aed)" : "2px solid transparent",
+                    borderBottom: active ? "3px solid var(--brand-primary, #7c3aed)" : "3px solid transparent",
                     whiteSpace: "nowrap",
                   }}
                 >
@@ -144,19 +143,7 @@ export default function Navbar() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="해커톤 검색..."
-              onMouseEnter={() => setSearchHovered(true)}
-              onMouseLeave={() => setSearchHovered(false)}
-              style={{
-                padding: "6px 12px 6px 32px",
-                borderRadius: 100,
-                background: "var(--bg-input, #dee2e6)",
-                border: "none",
-                color: "var(--text-subtle, #4b5563)",
-                fontSize: 13,
-                width: searchHovered ? 220 : 180,
-                outline: "none",
-                transition: "width 0.2s",
-              }}
+              className="nav-search-input"
             />
           </form>
 

@@ -11,22 +11,52 @@ interface HomeTabProps {
 export default function HomeTab({ team, inviteUrl, isEnded, copied, onCopy }: HomeTabProps) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-      <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14, padding: "1.25rem" }}>
-        <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--muted)", marginBottom: "0.75rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>팀 소개</div>
-        <p style={{ fontSize: "0.9rem", color: "var(--text)", lineHeight: 1.7, marginBottom: "0.5rem" }}>
+      {/* 팀 소개 */}
+      <div style={{ background: "var(--bg-main, #f0f2f5)", border: "1px solid var(--border-subtle, #dde1e6)", borderRadius: 12, padding: 24 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted, #6b6b80)", marginBottom: 12, letterSpacing: "0.224px" }}>팀 소개</div>
+        <p style={{ fontSize: 13, color: "var(--text-subtle, #4b5563)", lineHeight: "20px", margin: "0 0 12px 0" }}>
           {team.intro}
         </p>
-        <div style={{ fontSize: "0.8rem", color: "var(--muted)" }}>팀원 {team.memberCount}명</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12 }}>
+          <span style={{ color: "var(--text-muted, #6b6b80)" }}>팀원</span>
+          <span style={{ color: "var(--brand-primary, #7c3aed)", fontWeight: 600, letterSpacing: "0.224px" }}>
+            {team.memberCount}{team.maxMembers ? `/${team.maxMembers}명` : "명"}
+          </span>
+        </div>
       </div>
 
+      {/* 연락처 */}
+      {team.contact?.url && (() => {
+        const isExternal = team.contact.url.startsWith("http") && !team.contact.url.includes("/invite/");
+        if (!isExternal) return null;
+        return (
+          <div style={{ background: "var(--bg-main, #f0f2f5)", border: "1px solid var(--border-subtle, #dde1e6)", borderRadius: 12, padding: 24 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted, #6b6b80)", marginBottom: 12, letterSpacing: "0.224px" }}>연락처</div>
+            <a
+              href={team.contact.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: "inline-block",
+                fontSize: 13, color: "var(--brand-primary, #7c3aed)", fontWeight: 600,
+                textDecoration: "none", wordBreak: "break-all",
+              }}
+            >
+              {team.contact.url}
+            </a>
+          </div>
+        );
+      })()}
+
+      {/* 초대 링크 */}
       {inviteUrl && !isEnded && (
-        <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14, padding: "1.25rem" }}>
-          <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--muted)", marginBottom: "0.75rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>초대 링크</div>
-          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+        <div style={{ background: "var(--bg-main, #f0f2f5)", border: "1px solid var(--border-subtle, #dde1e6)", borderRadius: 12, padding: 24 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted, #6b6b80)", marginBottom: 12, letterSpacing: "0.224px" }}>초대 링크</div>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <div style={{
-              flex: 1, padding: "0.6rem 0.875rem", borderRadius: 8,
-              background: "var(--surface2)", border: "1px solid var(--border)",
-              fontSize: "0.8rem", color: "var(--muted)",
+              flex: 1, padding: "8px 12px", borderRadius: 8,
+              background: "#ffffff", border: "1px solid var(--border-subtle, #dde1e6)",
+              fontSize: 12, color: "var(--text-muted, #6b6b80)",
               overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
             }}>
               {inviteUrl}
@@ -34,15 +64,15 @@ export default function HomeTab({ team, inviteUrl, isEnded, copied, onCopy }: Ho
             <button
               onClick={onCopy}
               style={{
-                padding: "0.6rem 1rem", borderRadius: 8, fontWeight: 700,
-                fontSize: "0.8rem", whiteSpace: "nowrap", cursor: "pointer",
-                background: copied ? "rgba(16,185,129,0.15)" : "rgba(124,58,237,0.12)",
-                color: copied ? "#10b981" : "#a78bfa",
-                border: copied ? "1px solid rgba(16,185,129,0.3)" : "1px solid rgba(124,58,237,0.25)",
+                padding: "8px 14px", borderRadius: 8, fontWeight: 700,
+                fontSize: 12, whiteSpace: "nowrap", cursor: "pointer",
+                background: copied ? "rgba(16,185,129,0.15)" : "rgba(124,58,237,0.15)",
+                color: copied ? "#10b981" : "var(--brand-primary, #7c3aed)",
+                border: copied ? "1px solid rgba(16,185,129,0.3)" : "1px solid rgba(124,58,237,0.3)",
                 transition: "all 0.2s",
               }}
             >
-              {copied ? "✓ 복사됨" : "📋 복사"}
+              {copied ? "복사됨" : "복사"}
             </button>
           </div>
         </div>

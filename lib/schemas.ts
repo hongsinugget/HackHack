@@ -2,7 +2,7 @@ import { z } from "zod";
 
 // ── 공통 ──────────────────────────────────────────────────────────────────────
 
-/** http(s):// 로 시작하는 유효한 URL — javascript: / data: URI 차단 */
+/** http(s):// 로 시작하는 유효한 절대 URL — javascript: / data: URI 차단 */
 const safeUrl = z
   .string()
   .url()
@@ -10,6 +10,19 @@ const safeUrl = z
     (u) => u.startsWith("http://") || u.startsWith("https://"),
     { message: "URL은 http(s)://로 시작해야 합니다" }
   );
+
+/** 상대경로 또는 http(s):// URL만 허용 — javascript: / data: URI 차단 */
+const safeHref = z.string().refine(
+  (u) =>
+    u === "" ||
+    u === "#" ||
+    u.startsWith("/") ||
+    u.startsWith("./") ||
+    u.startsWith("../") ||
+    u.startsWith("http://") ||
+    u.startsWith("https://"),
+  { message: "URL은 상대경로 또는 http(s)://로 시작해야 합니다" }
+);
 
 const JoinRequestSchema = z.object({
   id: z.string(),
@@ -33,9 +46,9 @@ export const HackathonSchema = z.object({
     endAt: z.string(),
   }),
   links: z.object({
-    detail: z.string(),
-    rules: z.string(),
-    faq: z.string(),
+    detail: safeHref,
+    rules: safeUrl,
+    faq: safeUrl,
   }),
   maxPrizeKRW: z.number().optional(),
 });
@@ -85,8 +98,8 @@ export const LeaderboardEntrySchema = z.object({
     .optional(),
   artifacts: z
     .object({
-      webUrl: z.string().optional(),
-      pdfUrl: z.string().optional(),
+      webUrl: safeUrl.optional(),
+      pdfUrl: safeUrl.optional(),
       planTitle: z.string().optional(),
     })
     .optional(),
@@ -124,9 +137,23 @@ export const ProfileLinksSchema = z.object({
   linkedin: safeUrl.optional(),
 });
 
+// 허용된 이미지 아바타 키 (public/icons/{key}-profile.png 경로에 사용됨)
+const SAFE_AVATAR_IMAGE_KEYS = ["harry", "nini"] as const;
+
 export const ProfileSchema = z.object({
-  nickname: z.string(),
-  avatarEmoji: z.string().optional(),
+  nickname: z.string().min(2).max(12).regex(/^\S+$/, "공백은 사용할 수 없습니다"),
+  avatarEmoji: z
+    .string()
+    .refine(
+      (v) =>
+        !v ||
+        // 허용된 이미지 키이거나
+        (SAFE_AVATAR_IMAGE_KEYS as readonly string[]).includes(v) ||
+        // 이모지 단일 문자이거나 (절대 URL / 경로 주입 차단)
+        (!/^(https?:|\/|\.\.\/|data:)/i.test(v)),
+      { message: "허용되지 않는 avatarEmoji 값입니다" }
+    )
+    .optional(),
   bio: z.string().optional(),
   role: z.string().optional(),
   skills: z.array(z.string()).optional(),
@@ -152,8 +179,8 @@ export const NoticesSchema = z.array(NoticeSchema);
 
 export const TeamSubmissionSchema = z.object({
   projectName: z.string(),
-  githubUrl: z.string(),
-  demoUrl: z.string(),
+  githubUrl: safeUrl,
+  demoUrl: safeUrl,
   notes: z.string().optional(),
   fileName: z.string().optional(),
   submittedAt: z.string(),

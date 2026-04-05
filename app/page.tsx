@@ -26,12 +26,6 @@ export default function HomePage() {
             }}
           />
         ))}
-        <style>{`
-          @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
-          }
-        `}</style>
       </div>
     );
   }
@@ -46,7 +40,7 @@ export default function HomePage() {
         {/* Left column */}
         <div className="home-left-col" style={{ flex: "1 1 702px", minWidth: 0, display: "flex", flexDirection: "column", gap: "3rem" }}>
           <HackathonPreview hackathons={hackathons} />
-          <TeamPreview teams={teams} />
+          <TeamPreview teams={teams} hackathons={hackathons} />
         </div>
 
         {/* Right column */}

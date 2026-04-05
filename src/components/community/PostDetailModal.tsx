@@ -5,20 +5,13 @@ import { createPortal } from "react-dom";
 import { color, typography, borderRadius } from "@/src/styles/theme";
 import type { PostDetailModalProps } from "./types";
 
-const CATEGORY_EMOJI: Record<string, string> = {
-  공지: "📢",
-  후기: "📝",
-  질문: "❓",
-  꿀팁: "💡",
-};
-
 function formatCount(n: number): string {
   if (n >= 10_000) return `${(n / 10_000).toFixed(1).replace(/\.0$/, "")}만`;
   if (n >= 1_000) return n.toLocaleString("ko-KR");
   return String(n);
 }
 
-export default function PostDetailModal({ post, onClose }: PostDetailModalProps) {
+export default function PostDetailModal({ post, onClose, isLiked = false, onLike }: PostDetailModalProps) {
   // ESC 키로 닫기
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -37,6 +30,9 @@ export default function PostDetailModal({ post, onClose }: PostDetailModalProps)
       document.body.style.overflow = prev;
     };
   }, [handleKeyDown]);
+
+  // SSR 안전: document가 없으면 null (hooks 이후에 위치해야 함)
+  if (typeof document === "undefined") return null;
 
   const modal = (
     /* backdrop */
@@ -127,65 +123,95 @@ export default function PostDetailModal({ post, onClose }: PostDetailModalProps)
             flexWrap: "wrap",
           }}
         >
-          {/* 카테고리 배지 */}
+          {/* 카테고리 배지 — 연보라 통일 */}
           <span
             style={{
-              fontSize: typography.textStyles.captionTag.fontSize,
-              fontWeight: typography.textStyles.captionTag.fontWeight,
-              lineHeight: `${typography.textStyles.captionTag.lineHeight}px`,
+              fontSize:      typography.textStyles.captionTag.fontSize,
+              fontWeight:    typography.textStyles.captionTag.fontWeight,
+              lineHeight:    `${typography.textStyles.captionTag.lineHeight}px`,
               letterSpacing: `${typography.textStyles.captionTag.letterSpacing}px`,
-              color: color.brand.primary,
-              background: color.tag.hackathon.bg,
-              borderRadius: borderRadius.tag,
-              padding: "2px 8px",
-              whiteSpace: "nowrap",
+              color:         color.brand.primary,
+              background:    color.tag.hackathon.bg,
+              borderRadius:  borderRadius.pill,
+              padding:       "2px 8px",
+              whiteSpace:    "nowrap",
             }}
           >
-            {CATEGORY_EMOJI[post.category]} {post.category}
+            {post.category}
           </span>
 
-          {/* 작성자 · 조회수 · 좋아요 */}
+          {/* 작성자 · 조회수 */}
           <span
             style={{
-              fontSize: typography.textStyles.labelSmall.fontSize,
-              fontWeight: typography.textStyles.labelSmall.fontWeight,
-              lineHeight: `${typography.textStyles.labelSmall.lineHeight}px`,
+              fontSize:      typography.textStyles.labelSmall.fontSize,
+              fontWeight:    typography.textStyles.labelSmall.fontWeight,
+              lineHeight:    `${typography.textStyles.labelSmall.lineHeight}px`,
               letterSpacing: `${typography.textStyles.labelSmall.letterSpacing}px`,
-              color: color.text.muted,
-              whiteSpace: "nowrap",
+              color:         color.text.muted,
+              whiteSpace:    "nowrap",
             }}
           >
-            {post.author}&nbsp;·&nbsp;조회수 {formatCount(post.views)}회&nbsp;·&nbsp;좋아요 {post.likes}
+            {post.author}&nbsp;·&nbsp;조회수 {formatCount(post.views)}회
           </span>
         </div>
 
         {/* ── 본문 ── */}
         <div
           style={{
-            padding: "20px 24px 24px",
+            padding:   "20px 24px",
             overflowY: "auto",
-            flex: 1,
+            flex:      1,
           }}
         >
           <p
             style={{
-              margin: 0,
-              fontSize: typography.textStyles.body2.fontSize,
+              margin:     0,
+              fontSize:   typography.textStyles.body2.fontSize,
               fontWeight: typography.textStyles.body2.fontWeight,
               lineHeight: `${typography.textStyles.body2.lineHeight}px`,
-              color: color.text.subtle,
+              color:      color.text.subtle,
               whiteSpace: "pre-wrap",
-              wordBreak: "keep-all",
+              wordBreak:  "keep-all",
             }}
           >
             {post.body}
           </p>
         </div>
+
+        {/* ── 좋아요 푸터 ── */}
+        {onLike && (
+          <div
+            style={{
+              padding:    "12px 24px 20px",
+              display:    "flex",
+              justifyContent: "center",
+            }}
+          >
+            <button
+              onClick={onLike}
+              style={{
+                display:      "inline-flex",
+                alignItems:   "center",
+                gap:          6,
+                padding:      "8px 20px",
+                borderRadius: 9999,
+                fontSize:     typography.textStyles.body1.fontSize,
+                fontWeight:   600,
+                border:       `1px solid ${isLiked ? color.brand.primary : color.border.subtle}`,
+                background:   isLiked ? color.tag.hackathon.bg : "transparent",
+                color:        isLiked ? color.brand.primary : color.text.muted,
+                cursor:       "pointer",
+                transition:   "all 0.15s",
+              }}
+            >
+              <span style={{ fontSize: 16, lineHeight: 1 }}>{isLiked ? "♥" : "♡"}</span>
+              좋아요 {formatCount(post.likes + (isLiked ? 1 : 0))}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
 
-  // SSR 안전: document가 없으면 null
-  if (typeof document === "undefined") return null;
   return createPortal(modal, document.body);
 }

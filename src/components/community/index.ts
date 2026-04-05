@@ -6,7 +6,6 @@ export type {
   CommunityPost,
   PostCategory,
   CommunityCategory,
-  CommunityPostItemProps,
   CategoryTabsProps,
   PostDetailModalProps,
   CommunitySectionProps,

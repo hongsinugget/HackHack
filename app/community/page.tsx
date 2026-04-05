@@ -1,189 +1,250 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import Link from "next/link";
+import { color, typography, borderRadius } from "@/src/styles/theme";
 import { MOCK_POSTS } from "@/src/components/community/mockData";
 import type { CommunityCategory, CommunityPost } from "@/src/components/community/types";
 
 const CATEGORIES: CommunityCategory[] = ["전체", "공지", "후기", "질문", "꿀팁"];
 
-const CATEGORY_COLORS: Record<string, { bg: string; color: string }> = {
-  공지: { bg: "rgba(124,58,237,0.12)", color: "#7c3aed" },
-  후기: { bg: "rgba(16,185,129,0.12)", color: "#10b981" },
-  질문: { bg: "rgba(245,158,11,0.12)", color: "#f59e0b" },
-  꿀팁: { bg: "rgba(239,68,68,0.12)", color: "#ef4444" },
-};
+type SortKey = "latest" | "views" | "likes";
 
-function PostModal({ post, onClose }: { post: CommunityPost; onClose: () => void }) {
-  const cat = CATEGORY_COLORS[post.category] ?? { bg: "rgba(124,58,237,0.12)", color: "#7c3aed" };
+const SORT_OPTIONS: { label: string; value: SortKey }[] = [
+  { label: "최신순",         value: "latest" },
+  { label: "조회수 높은 순", value: "views"  },
+  { label: "좋아요 높은 순", value: "likes"  },
+];
+
+function formatCount(n: number): string {
+  if (n >= 10_000) return `${(n / 10_000).toFixed(1).replace(/\.0$/, "")}만`;
+  if (n >= 1_000) return n.toLocaleString("ko-KR");
+  return String(n);
+}
+
+function PostRow({ post }: { post: CommunityPost }) {
   return (
-    <div
-      onClick={onClose}
-      style={{
-        position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        zIndex: 200, padding: "1rem",
-      }}
+    <Link
+      href={`/community/${post.id}`}
+      style={{ textDecoration: "none", display: "block" }}
     >
       <div
-        onClick={(e) => e.stopPropagation()}
+        onMouseEnter={(e) => {
+          (e.currentTarget as HTMLDivElement).style.background = color.tag.hackathon.bg;
+        }}
+        onMouseLeave={(e) => {
+          (e.currentTarget as HTMLDivElement).style.background = "transparent";
+        }}
         style={{
-          background: "#ffffff", borderRadius: 16, padding: "2rem",
-          width: "100%", maxWidth: 560, maxHeight: "85vh",
-          display: "flex", flexDirection: "column", gap: "1.25rem",
-          overflow: "hidden",
+          display:      "flex",
+          alignItems:   "center",
+          gap:          "1rem",
+          padding:      "0.875rem 1.25rem",
+          cursor:       "pointer",
+          transition:   "background 0.12s",
         }}
       >
-        {/* Header */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "1rem" }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <span style={{ display: "inline-flex", alignItems: "center", padding: "2px 8px", borderRadius: 9999, fontSize: 12, fontWeight: 600, background: cat.bg, color: cat.color }}>
-              {post.category}
-            </span>
-            <h2 style={{ fontSize: 18, fontWeight: 800, lineHeight: "26px", color: "var(--text-main, #12121a)", margin: 0 }}>
-              {post.title}
-            </h2>
-          </div>
-          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 20, color: "#6b6b80", flexShrink: 0, padding: 4, lineHeight: 1 }}>✕</button>
-        </div>
-
-        {/* Meta */}
-        <div style={{ display: "flex", gap: "1rem", fontSize: 12, color: "#6b6b80", borderBottom: "1px solid #dde1e6", paddingBottom: "1rem" }}>
-          {post.author && <span>작성자 {post.author}</span>}
-          <span>조회 {post.views.toLocaleString()}</span>
-          <span>좋아요 {post.likes}</span>
-        </div>
-
-        {/* Body */}
-        <div style={{ overflowY: "auto", flex: 1 }}>
-          <p style={{ fontSize: 14, lineHeight: "22px", color: "var(--text-main, #12121a)", whiteSpace: "pre-wrap", margin: 0 }}>
-            {post.body}
+        {/* 제목 + 작성자 */}
+        <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
+          <p
+            style={{
+              fontSize:     typography.textStyles.body1.fontSize,
+              fontWeight:   typography.textStyles.body1.fontWeight,
+              lineHeight:   `${typography.textStyles.body1.lineHeight}px`,
+              color:        color.text.main,
+              margin:       0,
+              overflow:     "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace:   "nowrap",
+            }}
+          >
+            {post.title}
           </p>
+          {post.author && (
+            <p
+              style={{
+                fontSize:   typography.textStyles.labelSmall.fontSize,
+                fontWeight: typography.textStyles.labelSmall.fontWeight,
+                lineHeight: `${typography.textStyles.labelSmall.lineHeight}px`,
+                color:      color.text.muted,
+                margin:     0,
+              }}
+            >
+              {post.author}
+            </p>
+          )}
+        </div>
+
+        {/* 날짜 · 조회수 · 좋아요 */}
+        <div
+          style={{
+            display:       "flex",
+            gap:           "0.75rem",
+            fontSize:      typography.textStyles.labelSmall.fontSize,
+            fontWeight:    typography.textStyles.labelSmall.fontWeight,
+            letterSpacing: `${typography.textStyles.labelSmall.letterSpacing}px`,
+            color:         color.text.muted,
+            flexShrink:    0,
+            whiteSpace:    "nowrap",
+          }}
+        >
+          <span>{post.date}</span>
+          <span>조회 {formatCount(post.views)}</span>
+          <span>❤ {post.likes}</span>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
 
 export default function CommunityPage() {
+  const [query,          setQuery]          = useState("");
   const [activeCategory, setActiveCategory] = useState<CommunityCategory>("전체");
-  const [selectedPost, setSelectedPost] = useState<CommunityPost | null>(null);
+  const [sort,           setSort]           = useState<SortKey>("latest");
 
-  const filtered = useMemo(
-    () => activeCategory === "전체" ? MOCK_POSTS : MOCK_POSTS.filter((p) => p.category === activeCategory),
-    [activeCategory]
-  );
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return MOCK_POSTS
+      .filter((p) => activeCategory === "전체" || p.category === activeCategory)
+      .filter((p) => !q || p.title.toLowerCase().includes(q) || (p.author ?? "").toLowerCase().includes(q))
+      .sort((a, b) => {
+        if (sort === "views") return b.views - a.views;
+        if (sort === "likes") return b.likes - a.likes;
+        return b.date.localeCompare(a.date);
+      });
+  }, [query, activeCategory, sort]);
 
   return (
     <div>
-      {/* 헤더 */}
+      {/* ── 페이지 헤더 ── */}
       <div style={{ marginBottom: "2rem" }}>
-        <h1 style={{ fontSize: 28, fontWeight: 800, lineHeight: "38px", color: "var(--text-main, #12121a)", marginBottom: 4 }}>
+        <h1 style={{ fontSize: 28, fontWeight: 800, lineHeight: "38px", color: color.text.main, marginBottom: 4 }}>
           커뮤니티
         </h1>
-        <p style={{ fontSize: 13, color: "var(--text-muted, #6b6b80)", margin: 0 }}>
+        <p style={{ fontSize: typography.textStyles.body2.fontSize, color: color.text.muted, margin: 0 }}>
           해커톤 후기, 꿀팁, 질문을 함께 나눠요
         </p>
       </div>
 
-      {/* 카테고리 탭 */}
-      <div style={{ display: "flex", gap: 4, marginBottom: "1.5rem" }}>
-        {CATEGORIES.map((cat) => (
+      {/* ── 검색창 ── */}
+      <div style={{ position: "relative", marginBottom: "1rem" }}>
+        <span style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", display: "flex", alignItems: "center", pointerEvents: "none" }}>
+          <img src="/icons/search-icon.svg" alt="" width={16} height={16} />
+        </span>
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="제목 또는 작성자로 검색..."
+          style={{
+            width:        "100%",
+            padding:      "12px 16px 12px 44px",
+            borderRadius: 10,
+            background:   color.bg.main,
+            border:       `1px solid ${color.border.subtle}`,
+            color:        color.text.main,
+            fontSize:     typography.textStyles.body2.fontSize,
+            outline:      "none",
+            transition:   "border-color 0.15s",
+          }}
+          onFocus={(e) => (e.target.style.borderColor = "rgba(124,58,237,0.5)")}
+          onBlur={(e)  => (e.target.style.borderColor = color.border.subtle)}
+        />
+        {query && (
           <button
-            key={cat}
-            onClick={() => setActiveCategory(cat)}
-            style={{
-              padding: "6px 14px",
-              borderRadius: 8,
-              fontSize: 14,
-              fontWeight: activeCategory === cat ? 700 : 600,
-              background: activeCategory === cat ? "rgba(124,58,237,0.12)" : "transparent",
-              color: activeCategory === cat ? "var(--brand-primary, #7c3aed)" : "var(--text-subtle, #4b5563)",
-              border: activeCategory === cat ? "1px solid rgba(124,58,237,0.3)" : "1px solid transparent",
-              cursor: "pointer",
-              transition: "all 0.15s",
-            }}
+            onClick={() => setQuery("")}
+            style={{ position: "absolute", right: "0.75rem", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: color.text.muted, cursor: "pointer", fontSize: "1rem", lineHeight: 1 }}
           >
-            {cat}
+            ✕
           </button>
-        ))}
-      </div>
-
-      {/* 게시글 목록 */}
-      <div
-        style={{
-          background: "#ffffff",
-          border: "1px solid var(--border-subtle, #dde1e6)",
-          borderRadius: 12,
-          overflow: "hidden",
-        }}
-      >
-        {filtered.length === 0 ? (
-          <div style={{ padding: "3rem 2rem", textAlign: "center", color: "var(--text-muted, #6b6b80)", fontSize: 14 }}>
-            해당 카테고리의 게시글이 없습니다.
-          </div>
-        ) : (
-          filtered.map((post, idx) => {
-            const cat = CATEGORY_COLORS[post.category] ?? { bg: "rgba(124,58,237,0.12)", color: "#7c3aed" };
-            return (
-              <div
-                key={post.id}
-                onClick={() => setSelectedPost(post)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "1rem",
-                  padding: "1rem 1.25rem",
-                  borderBottom: idx < filtered.length - 1 ? "1px solid var(--border-subtle, #dde1e6)" : "none",
-                  cursor: "pointer",
-                  transition: "background 0.15s",
-                }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = "#f8f9fa"; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = ""; }}
-              >
-                {/* 카테고리 배지 */}
-                <span
-                  style={{
-                    display: "inline-flex", alignItems: "center",
-                    padding: "2px 8px", borderRadius: 9999,
-                    fontSize: 11, fontWeight: 600, whiteSpace: "nowrap",
-                    background: cat.bg, color: cat.color, flexShrink: 0,
-                  }}
-                >
-                  {post.category}
-                </span>
-
-                {/* 제목 */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p
-                    style={{
-                      fontSize: 14, fontWeight: 600, color: "var(--text-main, #12121a)",
-                      margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                    }}
-                  >
-                    {post.title}
-                  </p>
-                  {post.author && (
-                    <p style={{ fontSize: 12, color: "var(--text-muted, #6b6b80)", margin: "2px 0 0" }}>
-                      {post.author}
-                    </p>
-                  )}
-                </div>
-
-                {/* 메타 */}
-                <div style={{ display: "flex", gap: "0.875rem", fontSize: 12, color: "#6b6b80", flexShrink: 0 }}>
-                  <span>{post.date}</span>
-                  <span>조회 {post.views.toLocaleString()}</span>
-                  <span>❤ {post.likes}</span>
-                </div>
-              </div>
-            );
-          })
         )}
       </div>
 
-      {/* 상세 모달 */}
-      {selectedPost && (
-        <PostModal post={selectedPost} onClose={() => setSelectedPost(null)} />
+      {/* ── 카테고리 필터 ── */}
+      <div
+        style={{
+          display:      "flex",
+          gap:          "0.375rem",
+          flexWrap:     "wrap",
+          alignItems:   "center",
+          marginBottom: "1.5rem",
+          padding:      "0.25rem 0",
+        }}
+      >
+        {CATEGORIES.map((cat) => {
+          const isActive = activeCategory === cat;
+          return (
+            <button
+              key={cat}
+              onClick={() => setActiveCategory(cat)}
+              style={{
+                padding:      "6px 12px",
+                borderRadius: 6,
+                fontSize:     12.8,
+                fontWeight:   isActive ? 700 : 400,
+                background:   isActive ? "rgba(124,58,237,0.2)" : "transparent",
+                color:        isActive ? color.brand.primary : color.text.subtle,
+                border:       "none",
+                cursor:       "pointer",
+                transition:   "all 0.15s",
+              }}
+            >
+              {cat}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ── 결과 수 + 정렬 ── */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
+        <span style={{ fontSize: typography.textStyles.body2.fontSize, color: color.text.muted }}>
+          {filtered.length}개 게시글
+        </span>
+        <select
+          value={sort}
+          onChange={(e) => setSort(e.target.value as SortKey)}
+          style={{
+            padding:      "6px 12px",
+            borderRadius: 8,
+            fontSize:     13,
+            background:   color.bg.main,
+            color:        color.text.main,
+            border:       `1px solid ${color.border.subtle}`,
+            cursor:       "pointer",
+            outline:      "none",
+          }}
+        >
+          {SORT_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* ── 게시글 목록 ── */}
+      {filtered.length === 0 ? (
+        <div style={{ textAlign: "center", padding: "4rem 2rem", background: color.bg.main, borderRadius: borderRadius.md }}>
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: "0.75rem" }}>
+            <img src="/icons/search-icon.svg" alt="" width={32} height={32} style={{ opacity: 0.4 }} />
+          </div>
+          <div style={{ fontWeight: 700, fontSize: typography.textStyles.body1.fontSize, color: color.text.main, marginBottom: "0.375rem" }}>
+            {query ? `'${query}'에 해당하는 게시글이 없어요` : "해당 카테고리의 게시글이 없습니다"}
+          </div>
+          {query && (
+            <div style={{ display: "flex", gap: "0.5rem", justifyContent: "center", marginTop: "1rem" }}>
+              <button
+                onClick={() => setQuery("")}
+                style={{ padding: "6px 14px", borderRadius: borderRadius.sm, fontSize: 13, background: "rgba(124,58,237,0.12)", color: color.brand.primary, border: "none", cursor: "pointer", fontWeight: 600 }}
+              >
+                검색어 지우기
+              </button>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div>
+          {filtered.map((post) => (
+            <PostRow key={post.id} post={post} />
+          ))}
+        </div>
       )}
     </div>
   );

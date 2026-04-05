@@ -113,6 +113,8 @@ export interface HackathonDetailSection {
   info: {
     notice: string[];
     links: { rules: string; faq: string };
+    rulesContent?: string[];
+    faqContent?: Array<{ q: string; a: string }>;
   };
   eval: {
     metricName: string;

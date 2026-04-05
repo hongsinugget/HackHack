@@ -43,6 +43,23 @@
   box-sizing: border-box;
 }
 
+.nav-search-input {
+  padding: 6px 12px 6px 32px;
+  border-radius: 100px;
+  background: var(--bg-input, #dee2e6);
+  border: none;
+  color: var(--text-subtle, #4b5563);
+  font-size: 13px;
+  width: 180px;
+  outline: none;
+  transition: width 0.2s;
+}
+
+.nav-search-input:hover,
+.nav-search-input:focus {
+  width: 220px;
+}
+
 body {
   background: var(--bg);
   color: var(--text);
@@ -95,6 +112,17 @@ body {
   font-weight: 800;
   line-height: 30px;
   color: var(--text-main);
+}
+
+/* ── 공용 애니메이션 ────────────────────────────────────────── */
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
 }
 
 /* HackathonTag — node 140:3493 */
@@ -158,6 +186,26 @@ body {
 
 @media (max-width: 640px) {
   .hero-img-wrap { display: none !important; }
+}
+
+/* 내 팀 보기 버튼 */
+.btn-my-team {
+  padding: 8px 16px;
+  background: rgba(167, 139, 250, 0.12);
+  color: var(--brand-tag-purple, #a78bfa);
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  border: none;
+  display: inline-block;
+  text-align: right;
+  transition: background 0.15s, color 0.15s;
+}
+.btn-my-team:hover {
+  background: rgba(124, 58, 237, 0.12);
+  color: var(--brand-primary, #7c3aed);
 }
 
 /* TeamTag — node 140:3556 */

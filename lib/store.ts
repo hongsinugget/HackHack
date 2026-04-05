@@ -95,10 +95,10 @@ export const useStore = create<StoreState>((set, get) => ({
             profile = result.data;
           } else {
             if (process.env.NODE_ENV !== "production") {
-            console.error("[store] 프로필 스키마 불일치:", result.error.issues);
-          } else {
-            console.error("[store] 프로필 스키마 불일치, 초기화합니다");
-          }
+              console.error("[store] 프로필 스키마 불일치:", result.error.issues);
+            } else {
+              console.error("[store] 프로필 스키마 불일치, 초기화합니다");
+            }
             localStorage.removeItem(LS_KEYS.profile);
           }
         }
@@ -266,18 +266,20 @@ export const useStore = create<StoreState>((set, get) => ({
     const updatedProfile = { ...profile, myTeamCodes: [...myTeamCodes, teamCode], badges, timeline };
     saveProfile(updatedProfile);
 
-    const updatedTeams = teams.map((t) =>
-      t.teamCode === teamCode
-        ? {
-            ...t,
-            members: [...(t.members ?? []).filter((m) => m !== profile.nickname), profile.nickname],
-            memberCount: (t.members ?? []).includes(profile.nickname) ? t.memberCount : t.memberCount + 1,
-            memberRoles: role
-              ? { ...(t.memberRoles ?? {}), [profile.nickname]: role }
-              : t.memberRoles,
-          }
-        : t
-    );
+    const updatedTeams = teams.map((t) => {
+      if (t.teamCode !== teamCode) return t;
+      const alreadyIn = (t.members ?? []).includes(profile.nickname);
+      const newMembers = [...(t.members ?? []).filter((m) => m !== profile.nickname), profile.nickname];
+      const newCount = alreadyIn ? t.memberCount : t.memberCount + 1;
+      const isFull = t.maxMembers != null && newCount >= t.maxMembers;
+      return {
+        ...t,
+        members: newMembers,
+        memberCount: newCount,
+        isOpen: isFull ? false : t.isOpen,
+        memberRoles: role ? { ...(t.memberRoles ?? {}), [profile.nickname]: role } : t.memberRoles,
+      };
+    });
     localStorage.setItem(LS_KEYS.teams, JSON.stringify(updatedTeams));
     set({ profile: updatedProfile, teams: updatedTeams });
   },
@@ -384,19 +386,21 @@ export const useStore = create<StoreState>((set, get) => ({
 
     // 팀에 멤버 추가 + 요청 제거
     const request = team.joinRequests?.find((r) => r.nickname === nickname);
-    const updatedTeams = teams.map((t) =>
-      t.teamCode === teamCode
-        ? {
-            ...t,
-            members: [...(t.members ?? []).filter((m) => m !== nickname), nickname],
-            memberCount: (t.members ?? []).includes(nickname) ? t.memberCount : t.memberCount + 1,
-            joinRequests: (t.joinRequests ?? []).filter((r) => r.nickname !== nickname),
-            memberRoles: request?.role
-              ? { ...(t.memberRoles ?? {}), [nickname]: request.role }
-              : t.memberRoles,
-          }
-        : t
-    );
+    const updatedTeams = teams.map((t) => {
+      if (t.teamCode !== teamCode) return t;
+      const alreadyIn = (t.members ?? []).includes(nickname);
+      const newMembers = [...(t.members ?? []).filter((m) => m !== nickname), nickname];
+      const newCount = alreadyIn ? t.memberCount : t.memberCount + 1;
+      const isFull = t.maxMembers != null && newCount >= t.maxMembers;
+      return {
+        ...t,
+        members: newMembers,
+        memberCount: newCount,
+        isOpen: isFull ? false : t.isOpen,
+        joinRequests: (t.joinRequests ?? []).filter((r) => r.nickname !== nickname),
+        memberRoles: request?.role ? { ...(t.memberRoles ?? {}), [nickname]: request.role } : t.memberRoles,
+      };
+    });
     localStorage.setItem(LS_KEYS.teams, JSON.stringify(updatedTeams));
     set({ teams: updatedTeams });
 
