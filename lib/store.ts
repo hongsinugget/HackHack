@@ -2,7 +2,7 @@ import { create } from "zustand";
 import type { ZodType } from "zod";
 import type { Hackathon, Team, Leaderboard, LeaderboardEntry, Profile, Badge, TimelineEvent, JoinRequest } from "./types";
 import { seedHackathons, seedTeams, seedLeaderboards } from "./seed";
-import { HackathonsSchema, TeamsSchema, LeaderboardsSchema, ProfileSchema } from "./schemas";
+import { HackathonsSchema, TeamSchema, TeamsSchema, LeaderboardsSchema, ProfileSchema } from "./schemas";
 
 const LS_KEYS = {
   hackathons: "hh_hackathons",
@@ -147,16 +147,30 @@ export const useStore = create<StoreState>((set, get) => ({
         },
       ],
     };
-    saveProfile(newProfile);
-    set({ profile: newProfile, showNicknameModal: false });
+    const validated = ProfileSchema.safeParse(newProfile);
+    if (!validated.success) {
+      if (process.env.NODE_ENV !== "production") {
+        console.warn("[store] setNickname 스키마 검증 실패:", validated.error.issues);
+      }
+      return;
+    }
+    saveProfile(validated.data);
+    set({ profile: validated.data, showNicknameModal: false });
   },
 
   updateNickname: (nickname: string) => {
     const { profile } = get();
     if (!profile) return;
-    const updated = { ...profile, nickname };
-    saveProfile(updated);
-    set({ profile: updated });
+    const merged = { ...profile, nickname };
+    const validated = ProfileSchema.safeParse(merged);
+    if (!validated.success) {
+      if (process.env.NODE_ENV !== "production") {
+        console.warn("[store] updateNickname 스키마 검증 실패:", validated.error.issues);
+      }
+      return;
+    }
+    saveProfile(validated.data);
+    set({ profile: validated.data });
   },
 
   addBadge: (badge: Omit<Badge, "earnedAt">) => {
@@ -202,8 +216,15 @@ export const useStore = create<StoreState>((set, get) => ({
         },
       ];
     }
-    localStorage.setItem(LS_KEYS.leaderboards, JSON.stringify(updated));
-    set({ leaderboards: updated });
+    const validated = LeaderboardsSchema.safeParse(updated);
+    if (!validated.success) {
+      if (process.env.NODE_ENV !== "production") {
+        console.warn("[store] updateLeaderboard 스키마 검증 실패:", validated.error.issues);
+      }
+      return;
+    }
+    localStorage.setItem(LS_KEYS.leaderboards, JSON.stringify(validated.data));
+    set({ leaderboards: validated.data });
   },
 
   addTimelineEvent: (event: TimelineEvent) => {
@@ -311,14 +332,32 @@ export const useStore = create<StoreState>((set, get) => ({
 
   addTeam: (team: Team) => {
     const { teams } = get();
-    const updated = [team, ...teams];
+    const teamValidated = TeamSchema.safeParse(team);
+    if (!teamValidated.success) {
+      if (process.env.NODE_ENV !== "production") {
+        console.warn("[store] addTeam 스키마 검증 실패:", teamValidated.error.issues);
+      }
+      return;
+    }
+    const updated = [teamValidated.data, ...teams];
     localStorage.setItem(LS_KEYS.teams, JSON.stringify(updated));
     set({ teams: updated });
   },
 
   updateTeam: (teamCode: string, updates: Partial<Team>) => {
     const { teams } = get();
-    const updated = teams.map((t) => t.teamCode === teamCode ? { ...t, ...updates } : t);
+    const updated = teams.map((t) => {
+      if (t.teamCode !== teamCode) return t;
+      const merged = { ...t, ...updates };
+      const validated = TeamSchema.safeParse(merged);
+      if (!validated.success) {
+        if (process.env.NODE_ENV !== "production") {
+          console.warn("[store] updateTeam 스키마 검증 실패:", validated.error.issues);
+        }
+        return t; // 검증 실패 시 원본 유지
+      }
+      return validated.data;
+    });
     localStorage.setItem(LS_KEYS.teams, JSON.stringify(updated));
     set({ teams: updated });
   },
@@ -464,8 +503,15 @@ export const useStore = create<StoreState>((set, get) => ({
   updateProfile: (updates) => {
     const { profile } = get();
     if (!profile) return;
-    const updated = { ...profile, ...updates };
-    saveProfile(updated);
-    set({ profile: updated });
+    const merged = { ...profile, ...updates };
+    const validated = ProfileSchema.safeParse(merged);
+    if (!validated.success) {
+      if (process.env.NODE_ENV !== "production") {
+        console.warn("[store] updateProfile 스키마 검증 실패:", validated.error.issues);
+      }
+      return;
+    }
+    saveProfile(validated.data);
+    set({ profile: validated.data });
   },
 }));

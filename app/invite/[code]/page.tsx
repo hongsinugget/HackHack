@@ -18,8 +18,19 @@ export default function InvitePage({ params }: { params: Promise<{ code: string 
 
   const [decided, setDecided] = useState<"accepted" | "declined" | null>(null);
 
-  // 초대 코드로 팀 찾기
-  const team = teams.find((t) => t.contact.url.includes(`/invite/${code}`));
+  // 초대 코드 형식 검증 — 영숫자/하이픈/언더바만 허용
+  const VALID_INVITE_CODE = /^[A-Za-z0-9_-]{1,40}$/;
+
+  // 초대 코드로 팀 찾기 (pathname 정확 매칭)
+  const team = VALID_INVITE_CODE.test(code)
+    ? teams.find((t) => {
+        try {
+          return new URL(t.contact.url).pathname === `/invite/${code}`;
+        } catch {
+          return false;
+        }
+      })
+    : undefined;
   const hackathon = hackathons.find((h) => h.slug === team?.hackathonSlug);
   const myTeamCodes = profile?.myTeamCodes ?? [];
   const alreadyJoined = team ? myTeamCodes.includes(team.teamCode) : false;

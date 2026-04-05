@@ -643,9 +643,9 @@ function CampContent() {
       toast.error("이미 해당 대회의 팀에 소속되어 있습니다");
       return "";
     }
-    const inviteCode = "INV-" + Math.random().toString(36).slice(2, 7).toUpperCase();
+    const inviteCode = "INV-" + crypto.randomUUID().replace(/-/g, "").slice(0, 10).toUpperCase();
     const inviteUrl = `${window.location.origin}/invite/${inviteCode}`;
-    const teamCode = "T-" + Math.random().toString(36).slice(2, 6).toUpperCase();
+    const teamCode = "T-" + crypto.randomUUID().replace(/-/g, "").slice(0, 8).toUpperCase();
     const newTeam: Team = {
       teamCode,
       hackathonSlug: data.hackathonSlug,
