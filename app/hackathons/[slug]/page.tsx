@@ -66,6 +66,9 @@ export default function HackathonDetailPage({ params }: { params: Promise<{ slug
     [allHackathonTeams, myTeamCodes]
   );
 
+  // HackHack Gauge — 조건부 리턴 이전에 선언해야 Rules of Hooks 위반이 없음
+  const fever = useMemo(() => Math.min(hackathonTeams.length / 10, 1), [hackathonTeams.length]);
+
   const [mounted, setMounted] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
   const [activeSection, setActiveSection] = useState("prize");
@@ -145,9 +148,6 @@ export default function HackathonDetailPage({ params }: { params: Promise<{ slug
   const rushMode = isRushMode(hackathon.period.submissionDeadlineAt);
   const dday = dDayLabel(hackathon.period.submissionDeadlineAt);
   const isBookmarked = profile?.bookmarks.includes(slug) ?? false;
-
-  // HackHack Gauge
-  const fever = useMemo(() => Math.min(hackathonTeams.length / 10, 1), [hackathonTeams.length]);
 
   return (
     <div>
