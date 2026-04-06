@@ -32,6 +32,7 @@ function TeamCard({
   applied,
   isMember,
   isPending,
+  highlighted,
 }: {
   team: Team;
   hackathonTitle?: string;
@@ -40,18 +41,21 @@ function TeamCard({
   applied: boolean;
   isMember: boolean;
   isPending: boolean;
+  highlighted?: boolean;
 }) {
   return (
     <div
+      id={team.teamCode}
       style={{
         background: "var(--bg-main, #f0f2f5)",
-        border: "1px solid var(--border-subtle, #dde1e6)",
+        border: highlighted ? "2px solid var(--brand-primary, #7c3aed)" : "1px solid var(--border-subtle, #dde1e6)",
         borderRadius: 12,
-        padding: 24,
+        padding: highlighted ? 23 : 24,
         display: "flex",
         flexDirection: "column",
         gap: 12,
         transition: "transform 0.2s, border-color 0.2s",
+        boxShadow: highlighted ? "0 0 0 4px rgba(124,58,237,0.15)" : undefined,
       }}
       onMouseEnter={(e) => {
         const el = e.currentTarget as HTMLDivElement;
@@ -61,7 +65,7 @@ function TeamCard({
       onMouseLeave={(e) => {
         const el = e.currentTarget as HTMLDivElement;
         el.style.transform = "";
-        el.style.borderColor = "var(--border-subtle, #dde1e6)";
+        el.style.borderColor = highlighted ? "var(--brand-primary, #7c3aed)" : "var(--border-subtle, #dde1e6)";
       }}
     >
       {/* 대회 정보 */}
@@ -570,6 +574,7 @@ function CampContent() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showRandomModal, setShowRandomModal] = useState(false);
   const [applyTarget, setApplyTarget] = useState<string | null>(null);
+  const [highlightCode, setHighlightCode] = useState<string | null>(null);
 
   const myTeamCodes = new Set(profile?.myTeamCodes ?? []);
 
@@ -577,7 +582,17 @@ function CampContent() {
     const slug = searchParams.get("hackathon");
     if (slug) setSelectedHackathon(slug);
     if (searchParams.get("random") === "1") setShowRandomModal(true);
+    const highlight = searchParams.get("highlight");
+    if (highlight) setHighlightCode(highlight);
   }, [searchParams]);
+
+  useEffect(() => {
+    if (!highlightCode || !initialized) return;
+    const el = document.getElementById(highlightCode);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [highlightCode, initialized]);
 
   const activeCategory = ROLE_CATEGORIES.find((c) => c.label === selectedCategory) ?? null;
 
@@ -837,6 +852,7 @@ function CampContent() {
                 applied={myTeamCodes.has(team.teamCode)}
                 isMember={myTeamCodes.has(team.teamCode)}
                 isPending={isPending}
+                highlighted={highlightCode === team.teamCode}
               />
             );
           })}

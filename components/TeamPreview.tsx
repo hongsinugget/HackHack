@@ -72,7 +72,7 @@ const TeamCard = memo(function TeamCard({ team, hackathonTitle }: { team: Team; 
           </span>
         </div>
         <Link
-          href="/camp"
+          href={`/camp?highlight=${team.teamCode}`}
           style={{
             display: "inline-flex",
             alignItems: "center",
