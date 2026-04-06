@@ -117,9 +117,8 @@ function EditProfileModal({ onClose }: { onClose: () => void }) {
       <div style={{ background: "#ffffff", borderRadius: 16, width: "100%", maxWidth: 520, maxHeight: "92vh", display: "flex", flexDirection: "column" }}>
 
         {/* 헤더 */}
-        <div style={{ padding: "18px 24px 16px", borderBottom: "1px solid var(--bg-main, #f0f2f5)", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ padding: "18px 24px 16px", borderBottom: "1px solid var(--bg-main, #f0f2f5)", flexShrink: 0 }}>
           <h2 style={{ fontWeight: 700, fontSize: 16, lineHeight: "24px", color: "var(--text-main, #12121a)", margin: 0 }}>프로필 편집</h2>
-          <button onClick={onClose} style={{ background: "none", border: "none", color: "var(--text-subtle, #4b5563)", fontSize: 20, cursor: "pointer", lineHeight: 1, padding: 0 }}>✕</button>
         </div>
 
         {/* 스크롤 영역 */}
