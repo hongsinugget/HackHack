@@ -592,6 +592,8 @@ function CampContent() {
     if (el) {
       el.scrollIntoView({ behavior: "smooth", block: "center" });
     }
+    const timer = setTimeout(() => setHighlightCode(null), 2000);
+    return () => clearTimeout(timer);
   }, [highlightCode, initialized]);
 
   const activeCategory = ROLE_CATEGORIES.find((c) => c.label === selectedCategory) ?? null;
