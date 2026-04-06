@@ -34,7 +34,6 @@ const CommunitySection = function CommunitySection({
         flexDirection: "column",
         gap:           component.community.gap,
         width:         "100%",
-        maxWidth:      320,
       }}
     >
       {/* ── 헤더 ── */}
