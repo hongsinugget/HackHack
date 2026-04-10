@@ -9,6 +9,8 @@ import { toast } from "sonner";
 import { computeStatus } from "@/lib/utils";
 
 const ROLE_CATEGORIES: { label: string; roles: string[] }[] = [
+  { label: "프론트엔드", roles: ["Frontend"] },
+  { label: "백엔드", roles: ["Backend"] },
   { label: "Data Analyst", roles: ["Data Analyst"] },
   { label: "ML Engineer", roles: ["ML Engineer"] },
   { label: "Data Scientist", roles: ["Data Scientist"] },
